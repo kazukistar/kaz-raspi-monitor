@@ -5,24 +5,22 @@
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, viewport-fit=cover" />
   <title>KAZ-RASPI / 監視モニタ</title>
 
-  <!-- Fonts (free / Google Fonts) -->
+  <!-- Free fonts (Google Fonts) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@400;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 
   <style>
     :root{
-      /* EVA-ish palette */
       --bg0:#04060a;
       --bg1:#060a10;
-      --panel:#070b10;
 
-      --text:#ffd38a;                /* warm amber */
+      --text:#ffd38a;
       --muted:rgba(255, 211, 138, .68);
 
-      --ok:#ffb343;                  /* amber */
-      --caution:#ff5a2b;             /* orange-red */
-      --warn:#ff1b1b;                /* red */
+      --ok:#ffb343;
+      --caution:#ff5a2b;
+      --warn:#ff1b1b;
 
       --line:rgba(255, 180, 40, .60);
       --line2:rgba(255, 180, 40, .22);
@@ -45,14 +43,10 @@
       overflow:hidden;
     }
 
-    /* ===== Typography (NERV monitor vibe) =====
-       - Labels: condensed
-       - Numbers/Logs: mono
-    */
     .font-label{ font-family:"Roboto Condensed", system-ui, sans-serif; }
     .font-mono { font-family:"Share Tech Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
 
-    /* ===== App frame (portrait + scroll OK) ===== */
+    /* ===== Frame (portrait + scroll OK) ===== */
     .frame{
       height:100%;
       width:100%;
@@ -64,7 +58,7 @@
       display:flex;
       flex-direction:column;
       gap:var(--gap);
-      overflow:auto; /* allow scroll on phone */
+      overflow:auto;
     }
 
     /* ===== Header ===== */
@@ -101,7 +95,6 @@
       overflow:hidden;
       text-overflow:ellipsis;
     }
-
     .statusPill{
       justify-self:center;
       display:inline-flex;
@@ -118,54 +111,60 @@
       box-shadow: 0 0 14px rgba(255,170,40,.22);
     }
 
-    /* ===== Sections ===== */
+    /* ===== Content layout ===== */
     .grid{
       display:flex;
       flex-direction:column;
       gap:var(--gap);
     }
+    .row2{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:var(--gap);
+    }
+    @media (max-width: 420px){
+      .row2{ grid-template-columns: 1fr; }
+    }
 
-    /* ===== Hex panel ===== */
-    .hex{
+    /* =========================================================
+       HEX UNIT (regular hexagon by SVG background)
+       - Container is a square, hex is inscribed inside.
+       - Content is placed in "safe area" (center rectangle) so it never leaks.
+       ========================================================= */
+    .hexUnit{
       position:relative;
-      background:
-        linear-gradient(180deg, rgba(255,180,40,.10), rgba(255,180,40,.02));
-      border:1px solid rgba(255,180,40,.60);
-      clip-path: polygon(25% 3%, 75% 3%, 97% 50%, 75% 97%, 25% 97%, 3% 50%);
-      padding:14px 16px;
-      overflow:hidden; /* critical: no spill */
+      width:100%;
+      display:grid;
+      place-items:center;
+      /* fixed-ish height that scales with screen */
+      height: clamp(170px, 28vh, 260px);
       filter: drop-shadow(0 0 10px rgba(255,170,40,.10));
+    }
+    .hexUnit.sm{ height: clamp(160px, 24vh, 220px); }
+    .hexUnit.lg{ height: clamp(220px, 34vh, 320px); }
+
+    /* SVG hex "plate" */
+    .hexSvg{
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      pointer-events:none;
+    }
+
+    /* Safe content area inside a regular hex:
+       - we keep content in centered rectangle (approx 70% width, 62% height)
+       - this guarantees no clipping regardless of font size.
+    */
+    .hexBody{
+      position:relative;
+      width: 70%;
+      height: 62%;
       display:flex;
       flex-direction:column;
       justify-content:center;
-      min-height: 170px;
-    }
-    .hex::before{
-      content:"";
-      position:absolute;
-      inset:7px;
-      border:1px solid rgba(255,180,40,.18);
-      clip-path: polygon(25% 3%, 75% 3%, 97% 50%, 75% 97%, 25% 97%, 3% 50%);
-      pointer-events:none;
-    }
-    .hex::after{
-      content:"";
-      position:absolute;
-      top:-40%;
-      left:-40%;
-      width:90%;
-      height:200%;
-      transform:rotate(22deg);
-      background: linear-gradient(90deg, transparent, rgba(255,180,40,.08), transparent);
-      opacity:.35;
-      pointer-events:none;
-    }
-
-    .hex.small{ min-height: 150px; }
-    .hex.center{
-      border-width:2px;
-      padding:18px 20px;
-      min-height: 230px;
+      gap:10px;
+      overflow:hidden;
     }
 
     .tag{
@@ -177,24 +176,29 @@
       letter-spacing:.16em;
       color:var(--muted);
       text-transform:uppercase;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
     }
     .mode{
+      flex:0 0 auto;
       padding:2px 7px;
       border:1px solid rgba(255,180,40,.30);
       background: rgba(255,180,40,.05);
     }
     .title{
-      margin-top:10px;
-      font-size:14px;
+      font-size:13px;
       letter-spacing:.22em;
       text-transform:uppercase;
       color:rgba(255,211,138,.80);
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
     }
 
-    /* Numbers: always fit */
+    /* Numbers always fit: clamp + ellipsis */
     .big{
-      margin-top:10px;
-      font-size: clamp(34px, 10vw, 56px);
+      font-size: clamp(30px, 8.5vw, 54px);
       letter-spacing:.06em;
       line-height:1.0;
       white-space:nowrap;
@@ -202,43 +206,28 @@
       text-overflow:ellipsis;
       text-shadow: 0 0 22px rgba(255,170,40,.14);
     }
-    .hex.center .big{
-      font-size: clamp(48px, 14vw, 74px);
+    .hexUnit.lg .big{
+      font-size: clamp(40px, 11vw, 72px);
     }
     .unit{
-      font-size:.48em;
+      font-size:.50em;
       opacity:.9;
       margin-left:6px;
     }
 
     .sub{
-      margin-top:10px;
       display:flex;
       flex-wrap:wrap;
-      gap:12px;
-      font-size:13px;
+      gap:10px;
+      font-size:12px;
       letter-spacing:.10em;
       color:var(--muted);
+      overflow:hidden;
     }
     .sub b{ color:var(--text); font-weight:700; }
 
-    /* ===== Two-column rows (phone portrait) ===== */
-    .row2{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap:var(--gap);
-    }
-    @media (max-width: 420px){
-      .row2{ grid-template-columns: 1fr; }
-    }
-
-    /* ===== Storage bars ===== */
-    .barWrap{
-      margin-top:12px;
-      display:flex;
-      flex-direction:column;
-      gap:8px;
-    }
+    /* Storage bars */
+    .barWrap{ display:flex; flex-direction:column; gap:8px; }
     .bar{
       height:10px;
       border:1px solid rgba(255,180,40,.28);
@@ -254,31 +243,29 @@
     }
     .bar > i::after{
       content:"";
-      position:absolute;
-      top:0; right:-18px;
+      position:absolute; top:0; right:-18px;
       width:18px; height:100%;
       background: rgba(255,180,40,.55);
       clip-path: polygon(0 0, 100% 0, 0 100%);
       opacity:.6;
     }
-
     .monoLine{
-      margin-top:8px;
-      font-size:13px;
+      font-size:12px;
       letter-spacing:.10em;
       white-space:pre;
       color:rgba(255,211,138,.85);
+      overflow:hidden;
+      text-overflow:ellipsis;
     }
 
-    /* ===== Services log ===== */
+    /* Services log */
     .svc{
-      margin-top:12px;
-      padding-top:10px;
       border-top:1px dashed rgba(255,180,40,.22);
+      padding-top:10px;
       display:flex;
       flex-direction:column;
       gap:8px;
-      font-size:13px;
+      font-size:12px;
       letter-spacing:.10em;
       color:rgba(255,211,138,.85);
     }
@@ -292,33 +279,28 @@
       overflow:hidden;
       text-overflow:ellipsis;
       text-transform:uppercase;
+      white-space:nowrap;
     }
     .svcState{
       padding:2px 8px;
       border:1px solid rgba(255,180,40,.26);
       background: rgba(255,180,40,.05);
       text-transform:uppercase;
+      white-space:nowrap;
     }
 
-    /* ===== Severity ===== */
-    .sev-ok{ border-color: rgba(255,180,40,.60); }
-    .sev-caution{
-      border-color: rgba(255,90,43,.70);
-      background: linear-gradient(180deg, rgba(255,90,43,.12), rgba(255,90,43,.02));
-      filter: drop-shadow(0 0 14px rgba(255,90,43,.10));
-    }
-    .sev-warn{
-      border-color: rgba(255,27,27,.86);
-      background: linear-gradient(180deg, rgba(255,27,27,.16), rgba(255,27,27,.02));
-      filter: drop-shadow(0 0 20px rgba(255,27,27,.14));
-      animation: pulse 1.15s ease-in-out infinite;
-    }
+    /* ===== Severity (changes stroke + subtle glow) ===== */
+    .sev-ok   { --stroke: rgba(255,180,40,.62); --stroke2: rgba(255,180,40,.18); --fill1: rgba(255,180,40,.10); --fill2: rgba(255,180,40,.02); }
+    .sev-caution{ --stroke: rgba(255,90,43,.74);  --stroke2: rgba(255,90,43,.18);  --fill1: rgba(255,90,43,.12);  --fill2: rgba(255,90,43,.02); }
+    .sev-warn { --stroke: rgba(255,27,27,.86);   --stroke2: rgba(255,27,27,.20);   --fill1: rgba(255,27,27,.16);   --fill2: rgba(255,27,27,.02); }
+
+    .sev-warn{ animation: pulse 1.15s ease-in-out infinite; }
     @keyframes pulse{
-      0%,100%{ transform:translateZ(0); }
-      50%{ filter: drop-shadow(0 0 30px rgba(255,27,27,.22)); }
+      0%,100%{ filter: drop-shadow(0 0 12px rgba(255,27,27,.10)); }
+      50%{ filter: drop-shadow(0 0 26px rgba(255,27,27,.20)); }
     }
 
-    /* ===== OFFLINE overlay ===== */
+    /* OFFLINE overlay */
     .offlineOverlay{
       display:none;
       position:fixed;
@@ -376,106 +358,194 @@
 
     <div class="grid">
 
-      <!-- Center: TEMP -->
-      <div class="hex center" id="tempHex">
-        <div class="tag font-label">
-          <span>温度 / TEMP</span>
-          <span class="mode font-label">CPU</span>
-        </div>
-        <div class="title font-label">CPU 温度 / CPU TEMP</div>
-        <div class="big font-mono"><span id="cpuTemp">58.2</span><span class="unit">℃</span></div>
-        <div class="sub font-label">
-          <span>判定 <b id="tempState">正常</b> / <span id="tempStateEn">NORMAL</span></span>
-          <span>しきい値 <b>60</b> / <b>75</b> ℃</span>
-        </div>
-      </div>
+      <!-- TEMP (large) -->
+      <section class="hexUnit lg sev-ok" id="tempHex">
+        <svg class="hexSvg" viewBox="0 0 100 100" preserveAspectRatio="none">
+          <!-- Regular hex points: (50,2) (93,25) (93,75) (50,98) (7,75) (7,25) -->
+          <defs>
+            <linearGradient id="gFillTemp" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="var(--fill1)"/>
+              <stop offset="1" stop-color="var(--fill2)"/>
+            </linearGradient>
+          </defs>
+          <polygon points="50,2 93,25 93,75 50,98 7,75 7,25" fill="url(#gFillTemp)" stroke="var(--stroke)" stroke-width="1.6"/>
+          <polygon points="50,6 89,27.5 89,72.5 50,94 11,72.5 11,27.5" fill="none" stroke="var(--stroke2)" stroke-width="1"/>
+        </svg>
 
-      <!-- Row: CPU / RAM -->
+        <div class="hexBody">
+          <div class="tag font-label">
+            <span>温度 / TEMP</span>
+            <span class="mode font-label">CPU</span>
+          </div>
+          <div class="title font-label">CPU 温度 / CPU TEMP</div>
+          <div class="big font-mono"><span id="cpuTemp">58.2</span><span class="unit">℃</span></div>
+          <div class="sub font-label">
+            <span>判定 <b id="tempState">正常</b> / <span id="tempStateEn">NORMAL</span></span>
+            <span>しきい値 <b>60</b> / <b>75</b> ℃</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- CPU / RAM -->
       <div class="row2">
-        <div class="hex small" id="cpuHex">
-          <div class="tag font-label">
-            <span>CPU 使用率</span>
-            <span class="mode">UTIL</span>
-          </div>
-          <div class="title font-label">CPU / PROCESSOR</div>
-          <div class="big font-mono"><span id="cpuUtil">41</span><span class="unit">%</span></div>
-          <div class="sub font-label">
-            <span>状態 <b id="cpuState">正常</b> / <span id="cpuStateEn">NORMAL</span></span>
-          </div>
-        </div>
-
-        <div class="hex small" id="ramHex">
-          <div class="tag font-label">
-            <span>メモリ 使用率</span>
-            <span class="mode">MEM</span>
-          </div>
-          <div class="title font-label">メモリ / MEMORY</div>
-          <div class="big font-mono"><span id="ramUtil">63</span><span class="unit">%</span></div>
-          <div class="sub font-label">
-            <span>使用 <b id="ramUsed">2.6</b> / <span id="ramTotal">4.0</span> GB</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Row: LOAD / SERVICES -->
-      <div class="row2">
-        <div class="hex small" id="loadHex">
-          <div class="tag font-label">
-            <span>負荷 / LOAD</span>
-            <span class="mode">AVG</span>
-          </div>
-          <div class="title font-label">ロードアベレージ / LOAD AVG</div>
-          <div class="big font-mono"><span id="loadAvg">0.74</span></div>
-          <div class="sub font-label">
-            <span>稼働時間 <b id="uptime">12:34:56</b></span>
-          </div>
-        </div>
-
-        <div class="hex small" id="svcHex">
-          <div class="tag font-label">
-            <span>サービス監視 / SERVICES</span>
-            <span class="mode">UNIT</span>
-          </div>
-          <div class="title font-label">稼働状況 / SERVICE STATUS</div>
-
-          <div class="svc font-mono">
-            <div class="svcLine">
-              <div class="svcName">GOJA-DENPO-SERVER</div>
-              <div class="svcState" id="svcDenpo">稼働中...</div>
+        <section class="hexUnit sm sev-ok" id="cpuHex">
+          <svg class="hexSvg" viewBox="0 0 100 100" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="gFillCPU" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="var(--fill1)"/>
+                <stop offset="1" stop-color="var(--fill2)"/>
+              </linearGradient>
+            </defs>
+            <polygon points="50,2 93,25 93,75 50,98 7,75 7,25" fill="url(#gFillCPU)" stroke="var(--stroke)" stroke-width="1.6"/>
+            <polygon points="50,6 89,27.5 89,72.5 50,94 11,72.5 11,27.5" fill="none" stroke="var(--stroke2)" stroke-width="1"/>
+          </svg>
+          <div class="hexBody">
+            <div class="tag font-label">
+              <span>CPU 使用率</span>
+              <span class="mode">UTIL</span>
             </div>
-            <div class="svcLine">
-              <div class="svcName">GOJA-CLOUD-SERVER</div>
-              <div class="svcState" id="svcCloud">稼働中...</div>
+            <div class="title font-label">CPU / PROCESSOR</div>
+            <div class="big font-mono"><span id="cpuUtil">41</span><span class="unit">%</span></div>
+            <div class="sub font-label">
+              <span>状態 <b id="cpuState">正常</b> / <span id="cpuStateEn">NORMAL</span></span>
             </div>
           </div>
-        </div>
+        </section>
+
+        <section class="hexUnit sm sev-ok" id="ramHex">
+          <svg class="hexSvg" viewBox="0 0 100 100" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="gFillRAM" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="var(--fill1)"/>
+                <stop offset="1" stop-color="var(--fill2)"/>
+              </linearGradient>
+            </defs>
+            <polygon points="50,2 93,25 93,75 50,98 7,75 7,25" fill="url(#gFillRAM)" stroke="var(--stroke)" stroke-width="1.6"/>
+            <polygon points="50,6 89,27.5 89,72.5 50,94 11,72.5 11,27.5" fill="none" stroke="var(--stroke2)" stroke-width="1"/>
+          </svg>
+          <div class="hexBody">
+            <div class="tag font-label">
+              <span>メモリ 使用率</span>
+              <span class="mode">MEM</span>
+            </div>
+            <div class="title font-label">メモリ / MEMORY</div>
+            <div class="big font-mono"><span id="ramUtil">63</span><span class="unit">%</span></div>
+            <div class="sub font-label">
+              <span>使用 <b id="ramUsed">2.6</b> / <span id="ramTotal">4.0</span> GB</span>
+            </div>
+          </div>
+        </section>
       </div>
 
-      <!-- Row: SD / HDD -->
+      <!-- LOAD / SERVICES -->
       <div class="row2">
-        <div class="hex small" id="sdHex">
-          <div class="tag font-label">
-            <span>内部 記憶 / INTERNAL</span>
-            <span class="mode">SD</span>
+        <section class="hexUnit sm sev-ok" id="loadHex">
+          <svg class="hexSvg" viewBox="0 0 100 100" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="gFillLOAD" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="var(--fill1)"/>
+                <stop offset="1" stop-color="var(--fill2)"/>
+              </linearGradient>
+            </defs>
+            <polygon points="50,2 93,25 93,75 50,98 7,75 7,25" fill="url(#gFillLOAD)" stroke="var(--stroke)" stroke-width="1.6"/>
+            <polygon points="50,6 89,27.5 89,72.5 50,94 11,72.5 11,27.5" fill="none" stroke="var(--stroke2)" stroke-width="1"/>
+          </svg>
+          <div class="hexBody">
+            <div class="tag font-label">
+              <span>負荷 / LOAD</span>
+              <span class="mode">AVG</span>
+            </div>
+            <div class="title font-label">ロードアベレージ / LOAD AVG</div>
+            <div class="big font-mono"><span id="loadAvg">0.74</span></div>
+            <div class="sub font-label">
+              <span>稼働時間 <b id="uptime">12:34:56</b></span>
+            </div>
           </div>
-          <div class="title font-label">SDカード / SD CARD</div>
-          <div class="barWrap">
-            <div class="bar"><i id="sdBar" style="width:31%"></i></div>
-          </div>
-          <div class="monoLine font-mono" id="sdText">USED 18.3 / 58.3 GB (31%)</div>
-        </div>
+        </section>
 
-        <div class="hex small" id="hddHex">
-          <div class="tag font-label">
-            <span>外部 記憶 / EXTERNAL</span>
-            <span class="mode">HDD</span>
+        <section class="hexUnit sm sev-ok" id="svcHex">
+          <svg class="hexSvg" viewBox="0 0 100 100" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="gFillSVC" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="var(--fill1)"/>
+                <stop offset="1" stop-color="var(--fill2)"/>
+              </linearGradient>
+            </defs>
+            <polygon points="50,2 93,25 93,75 50,98 7,75 7,25" fill="url(#gFillSVC)" stroke="var(--stroke)" stroke-width="1.6"/>
+            <polygon points="50,6 89,27.5 89,72.5 50,94 11,72.5 11,27.5" fill="none" stroke="var(--stroke2)" stroke-width="1"/>
+          </svg>
+          <div class="hexBody">
+            <div class="tag font-label">
+              <span>サービス監視 / SERVICES</span>
+              <span class="mode">UNIT</span>
+            </div>
+            <div class="title font-label">稼働状況 / SERVICE STATUS</div>
+
+            <div class="svc font-mono">
+              <div class="svcLine">
+                <div class="svcName">GOJA-DENPO-SERVER</div>
+                <div class="svcState" id="svcDenpo">稼働中...</div>
+              </div>
+              <div class="svcLine">
+                <div class="svcName">GOJA-CLOUD-SERVER</div>
+                <div class="svcState" id="svcCloud">稼働中...</div>
+              </div>
+            </div>
           </div>
-          <div class="title font-label">外部HDD-01 / EXT HDD-01</div>
-          <div class="barWrap">
-            <div class="bar"><i id="hddBar" style="width:21%"></i></div>
+        </section>
+      </div>
+
+      <!-- SD / HDD -->
+      <div class="row2">
+        <section class="hexUnit sm sev-ok" id="sdHex">
+          <svg class="hexSvg" viewBox="0 0 100 100" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="gFillSD" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="var(--fill1)"/>
+                <stop offset="1" stop-color="var(--fill2)"/>
+              </linearGradient>
+            </defs>
+            <polygon points="50,2 93,25 93,75 50,98 7,75 7,25" fill="url(#gFillSD)" stroke="var(--stroke)" stroke-width="1.6"/>
+            <polygon points="50,6 89,27.5 89,72.5 50,94 11,72.5 11,27.5" fill="none" stroke="var(--stroke2)" stroke-width="1"/>
+          </svg>
+          <div class="hexBody">
+            <div class="tag font-label">
+              <span>内部 記憶 / INTERNAL</span>
+              <span class="mode">SD</span>
+            </div>
+            <div class="title font-label">SDカード / SD CARD</div>
+
+            <div class="barWrap">
+              <div class="bar"><i id="sdBar" style="width:31%"></i></div>
+            </div>
+            <div class="monoLine font-mono" id="sdText">USED 18.3 / 58.3 GB (31%)</div>
           </div>
-          <div class="monoLine font-mono" id="hddText">USED 212 / 1000 GB (21%)</div>
-        </div>
+        </section>
+
+        <section class="hexUnit sm sev-ok" id="hddHex">
+          <svg class="hexSvg" viewBox="0 0 100 100" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="gFillHDD" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="var(--fill1)"/>
+                <stop offset="1" stop-color="var(--fill2)"/>
+              </linearGradient>
+            </defs>
+            <polygon points="50,2 93,25 93,75 50,98 7,75 7,25" fill="url(#gFillHDD)" stroke="var(--stroke)" stroke-width="1.6"/>
+            <polygon points="50,6 89,27.5 89,72.5 50,94 11,72.5 11,27.5" fill="none" stroke="var(--stroke2)" stroke-width="1"/>
+          </svg>
+          <div class="hexBody">
+            <div class="tag font-label">
+              <span>外部 記憶 / EXTERNAL</span>
+              <span class="mode">HDD</span>
+            </div>
+            <div class="title font-label">外部HDD-01 / EXT HDD-01</div>
+
+            <div class="barWrap">
+              <div class="bar"><i id="hddBar" style="width:21%"></i></div>
+            </div>
+            <div class="monoLine font-mono" id="hddText">USED 212 / 1000 GB (21%)</div>
+          </div>
+        </section>
       </div>
 
     </div>
@@ -497,6 +567,8 @@
     const cpuHex  = el("cpuHex");
     const ramHex  = el("ramHex");
     const svcHex  = el("svcHex");
+    const sdHex   = el("sdHex");
+    const hddHex  = el("hddHex");
 
     const onlineDot = el("onlineDot");
     const onlineText = el("onlineText");
@@ -523,6 +595,12 @@
       if(p >= 90) return {jp:"警戒", en:"EMERGENCY", sev:"warn"};
       if(p >= 75) return {jp:"注意", en:"CAUTION", sev:"caution"};
       return {jp:"正常", en:"NORMAL", sev:"ok"};
+    }
+
+    function storageState(p){
+      if(p >= 90) return {sev:"warn"};
+      if(p >= 80) return {sev:"caution"};
+      return {sev:"ok"};
     }
 
     function formatUptime(sec){
@@ -564,7 +642,6 @@
       const dt = (now - lastTick) / 1000;
       lastTick = now;
 
-      // simulate online/offline
       if(Math.random() < 0.006) online = !online;
 
       offline.style.display = online ? "none" : "flex";
@@ -580,16 +657,15 @@
       uptimeSec += dt;
       el("uptime").textContent = formatUptime(uptimeSec);
 
-      // CPU temp
+      // temp
       const t = clamp(55 + (Math.random()*18 - 9) + Math.sin(uptimeSec/7)*6, 42, 84);
       el("cpuTemp").textContent = t.toFixed(1);
-
       const ts = tempState(t);
       el("tempState").textContent = ts.jp;
       el("tempStateEn").textContent = ts.en;
       setSeverity(tempHex, ts.sev);
 
-      // CPU util
+      // cpu util
       const cpu = clamp(35 + (Math.random()*40 - 20) + (t-55)*1.2, 2, 98);
       el("cpuUtil").textContent = Math.round(cpu);
       const cs = percentState(cpu);
@@ -597,7 +673,7 @@
       el("cpuStateEn").textContent = cs.en;
       setSeverity(cpuHex, cs.sev);
 
-      // RAM util
+      // ram util
       const ram = clamp(55 + (Math.random()*30 - 15), 10, 95);
       el("ramUtil").textContent = Math.round(ram);
       el("ramTotal").textContent = "4.0";
@@ -605,7 +681,7 @@
       const rs = percentState(ram);
       setSeverity(ramHex, rs.sev);
 
-      // Load
+      // load
       const load = clamp((cpu/100)*2.2 + Math.random()*0.35, 0.05, 3.5);
       el("loadAvg").textContent = load.toFixed(2);
 
@@ -613,10 +689,12 @@
       const sdP = clamp(22 + Math.random()*18, 5, 95);
       el("sdBar").style.width = `${sdP.toFixed(0)}%`;
       el("sdText").textContent = `USED ${(58.3*sdP/100).toFixed(1)} / 58.3 GB (${sdP.toFixed(0)}%)`;
+      setSeverity(sdHex, storageState(sdP).sev);
 
       const hddP = clamp(18 + Math.random()*10, 2, 99);
       el("hddBar").style.width = `${hddP.toFixed(0)}%`;
       el("hddText").textContent = `USED ${(1000*hddP/100).toFixed(0)} / 1000 GB (${hddP.toFixed(0)}%)`;
+      setSeverity(hddHex, storageState(hddP).sev);
 
       // services
       maybeFlipServices();
@@ -637,6 +715,8 @@
     setSeverity(cpuHex, "ok");
     setSeverity(ramHex, "ok");
     setSeverity(svcHex, "ok");
+    setSeverity(sdHex, "ok");
+    setSeverity(hddHex, "ok");
     requestAnimationFrame(tick);
   </script>
 </body>
