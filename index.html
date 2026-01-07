@@ -1,0 +1,629 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, viewport-fit=cover" />
+  <title>KAZ-RASPI 監視 / Monitor</title>
+  <style>
+    :root{
+      --bg:#05070a;
+      --panel:#070b10;
+      --line:rgba(255, 180, 40, .75);
+      --glow:rgba(255, 170, 40, .35);
+      --text:#ffd38a;
+      --muted:rgba(255, 211, 138, .65);
+
+      --ok:#ffb343;
+      --caution:#ff5a2b;
+      --warn:#ff1b1b;
+
+      --pad:14px;
+      --gap:14px;
+      --hex-gap:14px;
+      --radius:0px;
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{
+      width:100%;
+      height:100%;
+      margin:0;
+      background: radial-gradient(1200px 600px at 30% 20%, rgba(255,170,40,.08), transparent 60%),
+                  radial-gradient(900px 500px at 80% 80%, rgba(255,0,0,.06), transparent 55%),
+                  var(--bg);
+      color:var(--text);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+      overflow:hidden;
+    }
+
+    /* ===== Layout (Landscape) ===== */
+    .frame{
+      height:100%;
+      width:100%;
+      padding: calc(var(--pad) + env(safe-area-inset-top)) calc(var(--pad) + env(safe-area-inset-right))
+               calc(var(--pad) + env(safe-area-inset-bottom)) calc(var(--pad) + env(safe-area-inset-left));
+      display:flex;
+      flex-direction:column;
+      gap:var(--gap);
+    }
+
+    .header{
+      position:relative;
+      border:1px solid rgba(255,180,40,.35);
+      background: linear-gradient(90deg, rgba(255,180,40,.10), rgba(255,180,40,.02));
+      padding:10px 12px;
+      display:grid;
+      grid-template-columns: 1.2fr 1fr 1fr;
+      align-items:center;
+      gap:10px;
+      box-shadow: 0 0 24px rgba(255, 170, 40, .12);
+    }
+    .header:before{
+      content:"";
+      position:absolute;
+      inset:-2px;
+      pointer-events:none;
+      border:1px solid rgba(255,180,40,.18);
+    }
+
+    .hblock{
+      display:flex;
+      flex-direction:column;
+      line-height:1.1;
+    }
+    .hlabel{
+      font-size:12px;
+      color:var(--muted);
+      letter-spacing:.12em;
+    }
+    .hvalue{
+      font-size:18px;
+      letter-spacing:.06em;
+      text-transform:uppercase;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .statusPill{
+      justify-self:center;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:6px 10px;
+      border:1px solid rgba(255,180,40,.55);
+      background: rgba(255,180,40,.06);
+      box-shadow: 0 0 18px rgba(255,170,40,.14);
+      letter-spacing:.08em;
+    }
+    .dot{
+      width:10px;height:10px;border-radius:50%;
+      background:var(--ok);
+      box-shadow: 0 0 18px var(--glow);
+    }
+
+    .main{
+      flex:1;
+      min-height:0;
+      display:grid;
+      grid-template-columns: 1fr 1.25fr 1fr;
+      gap:var(--gap);
+    }
+
+    .col{
+      display:flex;
+      flex-direction:column;
+      gap:var(--gap);
+      min-height:0;
+    }
+
+    /* ===== EVA-ish hex ===== */
+    .hex{
+      position:relative;
+      background: linear-gradient(180deg, rgba(255,180,40,.09), rgba(255,180,40,.02));
+      border:1px solid rgba(255,180,40,.55);
+      filter: drop-shadow(0 0 10px rgba(255,170,40,.12));
+      clip-path: polygon(25% 3%, 75% 3%, 97% 50%, 75% 97%, 25% 97%, 3% 50%);
+      padding:14px 16px;
+      overflow:hidden;
+    }
+    .hex::before{
+      content:"";
+      position:absolute;
+      inset:6px;
+      border:1px solid rgba(255,180,40,.20);
+      clip-path: polygon(25% 3%, 75% 3%, 97% 50%, 75% 97%, 25% 97%, 3% 50%);
+      pointer-events:none;
+    }
+    .hex::after{
+      content:"";
+      position:absolute;
+      top:-40%;
+      left:-30%;
+      width:80%;
+      height:180%;
+      transform:rotate(20deg);
+      background: linear-gradient(90deg, transparent, rgba(255,180,40,.08), transparent);
+      opacity:.35;
+      pointer-events:none;
+    }
+
+    .hex.small{ padding:12px 14px; }
+    .hex.tall{ flex:1; min-height:0; }
+    .hex.center{
+      padding:18px 20px;
+      border-width:2px;
+    }
+
+    .tag{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      font-size:12px;
+      color:var(--muted);
+      letter-spacing:.10em;
+    }
+    .tag .mode{
+      padding:2px 6px;
+      border:1px solid rgba(255,180,40,.35);
+      background: rgba(255,180,40,.05);
+      text-transform:uppercase;
+    }
+
+    .title{
+      margin-top:8px;
+      font-size:14px;
+      letter-spacing:.18em;
+      text-transform:uppercase;
+      color:rgba(255,211,138,.8);
+    }
+    .jtitle{
+      font-size:13px;
+      letter-spacing:.22em;
+    }
+
+    .big{
+      margin-top:10px;
+      font-size:56px;
+      letter-spacing:.04em;
+      line-height:1;
+      text-shadow: 0 0 22px rgba(255,170,40,.18);
+      white-space:nowrap;
+    }
+    .unit{
+      font-size:.45em;
+      opacity:.85;
+      margin-left:6px;
+    }
+    .sub{
+      margin-top:10px;
+      display:flex;
+      gap:14px;
+      flex-wrap:wrap;
+      color:var(--muted);
+      font-size:13px;
+      letter-spacing:.08em;
+    }
+    .sub b{ color:var(--text); font-weight:700; }
+
+    /* ===== Bars (storage) ===== */
+    .barWrap{
+      margin-top:10px;
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+    .bar{
+      height:10px;
+      border:1px solid rgba(255,180,40,.35);
+      background: rgba(255,180,40,.05);
+      position:relative;
+      overflow:hidden;
+    }
+    .bar > i{
+      position:absolute; inset:0;
+      width:50%;
+      background: linear-gradient(90deg, rgba(255,180,40,.70), rgba(255,180,40,.25));
+      display:block;
+    }
+    .bar > i::after{
+      content:"";
+      position:absolute; top:0; right:-18px; width:18px; height:100%;
+      background: rgba(255,180,40,.55);
+      clip-path: polygon(0 0, 100% 0, 0 100%);
+      opacity:.6;
+    }
+    .mono{
+      margin-top:8px;
+      font-size:13px;
+      letter-spacing:.08em;
+      color:rgba(255,211,138,.8);
+      white-space:pre;
+    }
+
+    /* ===== Service log ===== */
+    .svc{
+      margin-top:10px;
+      border-top:1px dashed rgba(255,180,40,.25);
+      padding-top:10px;
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      font-size:13px;
+      letter-spacing:.06em;
+      color:rgba(255,211,138,.85);
+    }
+    .svcLine{
+      display:grid;
+      grid-template-columns: 1fr auto;
+      gap:10px;
+      align-items:center;
+      white-space:nowrap;
+    }
+    .svcName{
+      overflow:hidden;
+      text-overflow:ellipsis;
+      text-transform:uppercase;
+    }
+    .svcState{
+      padding:2px 8px;
+      border:1px solid rgba(255,180,40,.30);
+      background: rgba(255,180,40,.05);
+    }
+
+    /* ===== Severity styles ===== */
+    .sev-ok{
+      --line:rgba(255,180,40,.70);
+      border-color: rgba(255,180,40,.65);
+    }
+    .sev-caution{
+      border-color: rgba(255,90,43,.70);
+      filter: drop-shadow(0 0 14px rgba(255,90,43,.12));
+    }
+    .sev-warn{
+      border-color: rgba(255,27,27,.85);
+      background: linear-gradient(180deg, rgba(255,27,27,.14), rgba(255,27,27,.03));
+      filter: drop-shadow(0 0 18px rgba(255,27,27,.16));
+      animation: pulse 1.2s ease-in-out infinite;
+    }
+    .sev-warn::after{ opacity:.55; }
+    @keyframes pulse{
+      0%,100%{ transform:translateZ(0); }
+      50%{ filter: drop-shadow(0 0 26px rgba(255,27,27,.22)); }
+    }
+
+    .offlineOverlay{
+      display:none;
+      position:fixed;
+      inset:0;
+      background: rgba(0,0,0,.78);
+      backdrop-filter: blur(2px);
+      z-index:50;
+      align-items:center;
+      justify-content:center;
+      color:#ff2a2a;
+      text-align:center;
+    }
+    .offlineOverlay .box{
+      border:2px solid rgba(255,27,27,.85);
+      padding:24px 28px;
+      background: rgba(255,27,27,.08);
+      box-shadow: 0 0 40px rgba(255,27,27,.18);
+      letter-spacing:.18em;
+      text-transform:uppercase;
+    }
+    .offlineOverlay .box .jp{
+      font-size:18px;
+      margin-bottom:10px;
+    }
+    .offlineOverlay .box .en{
+      font-size:46px;
+      line-height:1;
+    }
+
+    /* ===== Responsive scaling (favor landscape) ===== */
+    @media (max-width: 900px){
+      .big{ font-size:46px; }
+    }
+    @media (max-width: 740px){
+      .main{ grid-template-columns: 1fr; }
+      body{ overflow:auto; }
+      .frame{ overflow:auto; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="frame">
+    <!-- Header -->
+    <div class="header">
+      <div class="hblock">
+        <div class="hlabel">監視対象 / TARGET</div>
+        <div class="hvalue" id="hostName">KAZ-RASPI</div>
+      </div>
+
+      <div class="statusPill" aria-label="status">
+        <span class="dot" id="onlineDot"></span>
+        <span class="hvalue" id="onlineText">稼働 / ONLINE</span>
+      </div>
+
+      <div class="hblock" style="justify-self:end; text-align:right;">
+        <div class="hlabel">更新 / UPDATE</div>
+        <div class="hvalue"><span id="updateAge">0.0</span> s</div>
+      </div>
+    </div>
+
+    <!-- Main -->
+    <div class="main">
+      <!-- Left column -->
+      <div class="col">
+        <div class="hex small" id="cpuHex">
+          <div class="tag">
+            <span class="jtitle">CPU 使用率</span>
+            <span class="mode">UTIL</span>
+          </div>
+          <div class="big"><span id="cpuUtil">41</span><span class="unit">%</span></div>
+          <div class="sub">
+            <span>状態 <b id="cpuState">正常</b> / <span id="cpuStateEn">NORMAL</span></span>
+          </div>
+        </div>
+
+        <div class="hex small" id="ramHex">
+          <div class="tag">
+            <span class="jtitle">メモリ 使用率</span>
+            <span class="mode">MEM</span>
+          </div>
+          <div class="big"><span id="ramUtil">63</span><span class="unit">%</span></div>
+          <div class="sub">
+            <span>使用 <b id="ramUsed">2.6</b> / <span id="ramTotal">4.0</span> GB</span>
+          </div>
+        </div>
+
+        <div class="hex small" id="loadHex">
+          <div class="tag">
+            <span class="jtitle">負荷</span>
+            <span class="mode">LOAD</span>
+          </div>
+          <div class="big"><span id="loadAvg">0.74</span></div>
+          <div class="sub">
+            <span>稼働時間 <b id="uptime">12:34:56</b></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Center column -->
+      <div class="col">
+        <div class="hex center tall" id="tempHex">
+          <div class="tag">
+            <span class="jtitle">温度</span>
+            <span class="mode">TEMP</span>
+          </div>
+          <div class="title">CPU 温度 / CPU TEMP</div>
+          <div class="big"><span id="cpuTemp">58.2</span><span class="unit">℃</span></div>
+          <div class="sub">
+            <span>判定 <b id="tempState">正常</b> / <span id="tempStateEn">NORMAL</span></span>
+            <span>しきい値 <b>60</b> / <b>75</b> ℃</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right column -->
+      <div class="col">
+        <div class="hex small" id="svcHex">
+          <div class="tag">
+            <span class="jtitle">サービス監視</span>
+            <span class="mode">SERV</span>
+          </div>
+          <div class="title">稼働状況 / SERVICE STATUS</div>
+
+          <div class="svc">
+            <div class="svcLine">
+              <div class="svcName">GOJA-DENPO-SERVER</div>
+              <div class="svcState" id="svcDenpo">稼働中...</div>
+            </div>
+            <div class="svcLine">
+              <div class="svcName">GOJA-CLOUD-SERVER</div>
+              <div class="svcState" id="svcCloud">稼働中...</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="hex small" id="sdHex">
+          <div class="tag">
+            <span class="jtitle">内部 記憶</span>
+            <span class="mode">SD</span>
+          </div>
+          <div class="title">SDカード / SD CARD</div>
+          <div class="barWrap">
+            <div class="bar"><i id="sdBar" style="width:31%"></i></div>
+          </div>
+          <div class="mono" id="sdText">USED 18.3 / 58.3 GB (31%)</div>
+        </div>
+
+        <div class="hex small" id="hddHex">
+          <div class="tag">
+            <span class="jtitle">外部 記憶</span>
+            <span class="mode">HDD</span>
+          </div>
+          <div class="title">外部HDD-01 / EXT HDD-01</div>
+          <div class="barWrap">
+            <div class="bar"><i id="hddBar" style="width:21%"></i></div>
+          </div>
+          <div class="mono" id="hddText">USED 212 / 1000 GB (21%)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OFFLINE overlay -->
+  <div class="offlineOverlay" id="offline">
+    <div class="box">
+      <div class="jp">通信断 / OFFLINE</div>
+      <div class="en">NO SIGNAL</div>
+    </div>
+  </div>
+
+  <script>
+    // ===== Dummy data generator (UI-only phase) =====
+    const el = (id) => document.getElementById(id);
+
+    const tempHex = el("tempHex");
+    const cpuHex  = el("cpuHex");
+    const ramHex  = el("ramHex");
+    const svcHex  = el("svcHex");
+    const onlineDot = el("onlineDot");
+    const onlineText = el("onlineText");
+    const offline = el("offline");
+
+    let lastTick = performance.now();
+    let online = true;
+
+    function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
+
+    function setSeverity(node, sev){
+      node.classList.remove("sev-ok","sev-caution","sev-warn");
+      node.classList.add(sev === "warn" ? "sev-warn" : sev === "caution" ? "sev-caution" : "sev-ok");
+    }
+
+    function tempState(t){
+      if(t >= 75) return {jp:"警戒", en:"EMERGENCY", sev:"warn"};
+      if(t >= 60) return {jp:"注意", en:"CAUTION", sev:"caution"};
+      return {jp:"正常", en:"NORMAL", sev:"ok"};
+    }
+
+    function percentState(p){
+      if(p >= 90) return {jp:"警戒", en:"EMERGENCY", sev:"warn"};
+      if(p >= 75) return {jp:"注意", en:"CAUTION", sev:"caution"};
+      return {jp:"正常", en:"NORMAL", sev:"ok"};
+    }
+
+    function formatUptime(sec){
+      sec = Math.max(0, Math.floor(sec));
+      const h = String(Math.floor(sec/3600)).padStart(2,'0');
+      const m = String(Math.floor((sec%3600)/60)).padStart(2,'0');
+      const s = String(sec%60).padStart(2,'0');
+      return `${h}:${m}:${s}`;
+    }
+
+    // simulate services
+    const services = {
+      denpo: {state:"active", label:"稼働中..."},
+      cloud: {state:"active", label:"稼働中..."},
+    };
+
+    function serviceLabel(st){
+      if(st === "active") return "稼働中...";
+      if(st === "restarting") return "再起動中...";
+      return "停止";
+    }
+
+    function maybeFlipServices(){
+      // small chance to simulate trouble
+      const r = Math.random();
+      if(r < 0.03) services.denpo.state = "restarting";
+      else if(r < 0.04) services.denpo.state = "inactive";
+      else if(r < 0.07) services.denpo.state = "active";
+
+      const c = Math.random();
+      if(c < 0.02) services.cloud.state = "restarting";
+      else if(c < 0.03) services.cloud.state = "inactive";
+      else if(c < 0.06) services.cloud.state = "active";
+
+      services.denpo.label = serviceLabel(services.denpo.state);
+      services.cloud.label = serviceLabel(services.cloud.state);
+    }
+
+    // main loop
+    let uptimeSec = 0;
+
+    function tick(){
+      const now = performance.now();
+      const dt = (now - lastTick) / 1000;
+      lastTick = now;
+
+      // simulate online/offline rarely
+      if(Math.random() < 0.008){
+        online = !online;
+      }
+      offline.style.display = online ? "none" : "flex";
+      onlineDot.style.background = online ? "var(--ok)" : "var(--warn)";
+      onlineText.textContent = online ? "稼働 / ONLINE" : "停止 / OFFLINE";
+
+      // update "update age"
+      el("updateAge").textContent = online ? "1.0" : "—";
+
+      if(!online){
+        requestAnimationFrame(tick);
+        return;
+      }
+
+      uptimeSec += dt;
+      el("uptime").textContent = formatUptime(uptimeSec);
+
+      // CPU temp 45-82
+      const t = clamp(55 + (Math.random()*18 - 9) + Math.sin(uptimeSec/7)*6, 42, 84);
+      el("cpuTemp").textContent = t.toFixed(1);
+
+      const ts = tempState(t);
+      el("tempState").textContent = ts.jp;
+      el("tempStateEn").textContent = ts.en;
+      setSeverity(tempHex, ts.sev);
+
+      // CPU util 5-98
+      const cpu = clamp(35 + (Math.random()*40 - 20) + (t-55)*1.2, 2, 98);
+      el("cpuUtil").textContent = Math.round(cpu);
+      const cs = percentState(cpu);
+      el("cpuState").textContent = cs.jp;
+      el("cpuStateEn").textContent = cs.en;
+      setSeverity(cpuHex, cs.sev);
+
+      // RAM util
+      const ram = clamp(55 + (Math.random()*30 - 15), 10, 95);
+      el("ramUtil").textContent = Math.round(ram);
+      el("ramTotal").textContent = "4.0";
+      el("ramUsed").textContent = (4.0 * ram/100).toFixed(1);
+      const rs = percentState(ram);
+      setSeverity(ramHex, rs.sev);
+
+      // Load avg
+      const load = clamp((cpu/100)*2.2 + Math.random()*0.35, 0.05, 3.5);
+      el("loadAvg").textContent = load.toFixed(2);
+
+      // disks
+      const sdP = clamp(22 + Math.random()*18, 5, 95);
+      el("sdBar").style.width = `${sdP.toFixed(0)}%`;
+      el("sdText").textContent = `USED ${(58.3*sdP/100).toFixed(1)} / 58.3 GB (${sdP.toFixed(0)}%)`;
+
+      const hddP = clamp(18 + Math.random()*10, 2, 99);
+      el("hddBar").style.width = `${hddP.toFixed(0)}%`;
+      el("hddText").textContent = `USED ${(1000*hddP/100).toFixed(0)} / 1000 GB (${hddP.toFixed(0)}%)`;
+
+      // services
+      maybeFlipServices();
+      el("svcDenpo").textContent = services.denpo.label;
+      el("svcCloud").textContent = services.cloud.label;
+
+      // If any service inactive -> service block warn
+      const anyDown = (services.denpo.state === "inactive") || (services.cloud.state === "inactive");
+      const anyRestart = (services.denpo.state === "restarting") || (services.cloud.state === "restarting");
+      if(anyDown) setSeverity(svcHex, "warn");
+      else if(anyRestart) setSeverity(svcHex, "caution");
+      else setSeverity(svcHex, "ok");
+
+      requestAnimationFrame(tick);
+    }
+
+    // initialize severity base
+    setSeverity(tempHex, "ok");
+    setSeverity(cpuHex, "ok");
+    setSeverity(ramHex, "ok");
+    setSeverity(svcHex, "ok");
+
+    requestAnimationFrame(tick);
+
+    // Tip: later replace dummy with fetch('/api/status') etc.
+    // Keep UI unchanged.
+  </script>
+</body>
+</html>
