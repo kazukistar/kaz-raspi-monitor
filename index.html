@@ -1,731 +1,216 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>KAZ-RASPI | SERVER STATUS MONITOR</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>KAZ-RASPI MONITOR</title>
 
-  <!-- 7-seg font (DSEG7) -->
-  <style>
-    @font-face{
-      font-family:"DSEG7";
-      src:url("https://cdn.jsdelivr.net/gh/keshikan/DSEG@master/fonts/DSEG7Classic-Bold.woff2") format("woff2");
-      font-weight:700;
-      font-style:normal;
-      font-display:swap;
-    }
-  </style>
+<!-- フォント -->
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DSEG7+Classic:wght@400&display=swap" rel="stylesheet">
 
-  <style>
-    :root{
-      --bg:#050607;
-      --gold:#f6c200;          /* エヴァ寄り黄色 */
-      --text:rgba(246,194,0,.92);
-      --textDim:rgba(246,194,0,.70);
+<style>
+:root{
+  --eva-yellow:#f6c400;
+  --bg:#000;
+}
 
-      --cardW:min(86vw, 520px);
+*{box-sizing:border-box}
 
-      /* 正六角形( pointy-top )の外接矩形： H/W = 2/sqrt(3) = 1.154700538 */
-      --hexRatio: 1.154700538;
-      --hexH: calc(var(--cardW) * var(--hexRatio));
+body{
+  margin:0;
+  background:radial-gradient(circle at top,#1a1400,#000 70%);
+  color:var(--eva-yellow);
+  font-family:"Noto Serif JP", serif;
+}
 
-      --padTop: clamp(16px, 3.4vw, 26px);
-      --padBot: clamp(14px, 3.2vw, 24px);
-    }
+header{
+  padding:18px 16px;
+  border-bottom:1px solid rgba(246,196,0,.4);
+}
 
-    html, body { height:100%; }
-    body{
-      margin:0;
-      background:
-        radial-gradient(1200px 800px at 50% -120px, rgba(246,194,0,.10), transparent 60%),
-        radial-gradient(900px 900px at 50% 45%, rgba(246,194,0,.06), transparent 62%),
-        linear-gradient(180deg, #070809 0%, #040405 60%, #020203 100%);
-      color:var(--text);
-      font-family: "Times New Roman", Times, serif;
-      overflow-x:hidden;
-    }
-    body:before{
-      content:"";
-      position:fixed;
-      inset:0;
-      pointer-events:none;
-      background:
-        radial-gradient(circle at 20% 30%, rgba(246,194,0,.06), transparent 35%),
-        radial-gradient(circle at 80% 60%, rgba(246,194,0,.05), transparent 40%),
-        radial-gradient(circle at 50% 90%, rgba(246,194,0,.04), transparent 45%);
-      mix-blend-mode:screen;
-      opacity:.9;
-    }
+header h1{
+  margin:0;
+  font-size:22px;
+  letter-spacing:.15em;
+}
 
-    .wrap{
-      min-height:100%;
-      padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
-    }
+header .sub{
+  margin-top:6px;
+  font-size:12px;
+  opacity:.8;
+}
 
-    /* ===== Header ===== */
-    .header{
-      width:min(92vw, 620px);
-      margin: 18px auto 18px;
-      padding: 18px 18px 16px;
-      border: 1px solid rgba(246,194,0,.35);
-      box-shadow: 0 0 22px rgba(246,194,0,.10), inset 0 0 18px rgba(246,194,0,.06);
-      background: linear-gradient(180deg, rgba(8,9,10,.72), rgba(5,6,7,.56));
-      position:relative;
-    }
-    .header:before{
-      content:"";
-      position:absolute;
-      inset:-2px;
-      border:1px solid rgba(246,194,0,.18);
-      pointer-events:none;
-    }
-    .headRow{
-      display:flex;
-      align-items:flex-end;
-      justify-content:space-between;
-      gap:12px;
-      flex-wrap:wrap;
-    }
-    .title{
-      font-weight:700;
-      letter-spacing:.14em;
-      font-size: clamp(22px, 5.2vw, 34px);
-      line-height:1;
-      text-transform:uppercase;
-    }
-    .subtitle{
-      margin-top:6px;
-      color:rgba(246,194,0,.68);
-      letter-spacing:.22em;
-      font-size: clamp(11px, 2.8vw, 13px);
-      font-weight:700;
-    }
-    .statusBox{
-      display:flex;
-      align-items:center;
-      gap:10px;
-      padding: 10px 12px;
-      border:1px solid rgba(246,194,0,.35);
-      background: rgba(6,7,8,.50);
-      box-shadow: inset 0 0 12px rgba(246,194,0,.08);
-      font-weight:700;
-      letter-spacing:.10em;
-      text-transform:uppercase;
-      font-size: clamp(11px, 2.8vw, 13px);
-      white-space:nowrap;
-    }
-    .dot{
-      width:10px; height:10px;
-      border-radius:50%;
-      background: var(--gold);
-      box-shadow: 0 0 14px rgba(246,194,0,.50);
-      flex:0 0 auto;
-    }
-    .metaRow{
-      margin-top:10px;
-      display:flex;
-      justify-content:space-between;
-      gap:10px;
-      flex-wrap:wrap;
-      color:rgba(246,194,0,.62);
-      letter-spacing:.20em;
-      text-transform:uppercase;
-      font-weight:700;
-      font-size: clamp(10px, 2.6vw, 12px);
-    }
+main{
+  padding:28px 0 80px;
+  display:flex;
+  flex-direction:column;
+  gap:48px;
+}
 
-    /* ===== Cards list ===== */
-    .cards{
-      width:100%;
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      gap: 26px;         /* 食い込み防止：間隔を少し増やす */
-      padding: 8px 0 46px;
-    }
+/* ===== 正六角形 ===== */
+.hex-wrap{
+  display:flex;
+  justify-content:center;
+}
 
-    /* ===== Hex Card (SVG版: 正六角形保証) ===== */
-    .hex{
-      width: var(--cardW);
-      height: var(--hexH);
-      position:relative;
-      filter: drop-shadow(0 0 12px rgba(246,194,0,.10));
-    }
+.hex{
+  width:min(86vw,420px);
+}
 
-    /* 六角形の背景（グロー） */
-    .hex .bgGlow{
-      position:absolute;
-      inset:0;
-      background:
-        radial-gradient(120% 120% at 50% 24%, rgba(246,194,0,.14), transparent 60%),
-        radial-gradient(90% 90% at 50% 72%, rgba(246,194,0,.06), transparent 65%);
-      filter: blur(0.6px);
-      opacity: .9;
-    }
+svg{
+  width:100%;
+  height:auto;
+  display:block;
+}
 
-    /* SVG枠（正六角形そのもの） */
-    .hex svg{
-      position:absolute;
-      inset:0;
-      width:100%;
-      height:100%;
-      display:block;
-    }
+.hex-title{
+  font-size:22px;
+}
 
-    /* 内容：六角形内に安全に収める */
-    .hex .content{
-      position:absolute;
-      inset:0;
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      justify-content:flex-start;
-      text-align:center;
-      padding: var(--padTop) 36px var(--padBot);
-      overflow:hidden;
-      box-sizing:border-box;
-    }
+.hex-value{
+  font-family:"DSEG7 Classic", monospace;
+  font-size:64px;
+  letter-spacing:.04em;
+}
 
-    .kTitle{
-      font-family: "HPG明朝E", "Hiragino Mincho ProN", "Yu Mincho", "MS Mincho", serif;
-      font-weight: 800;
-      color: var(--text);
-      letter-spacing: .06em;
-      font-size: clamp(24px, 6.8vw, 36px);
-      line-height:1.05;
-      margin: 2px 0 10px;
-      max-width: 100%;
-      white-space: nowrap;
-      overflow:hidden;
-      text-overflow: ellipsis;
-    }
+.hex-unit{
+  font-size:22px;
+  margin-left:6px;
+}
 
-    .kTitle2{
-      font-family: "HPG明朝E", "Hiragino Mincho ProN", "Yu Mincho", "MS Mincho", serif;
-      font-weight: 800;
-      color: var(--text);
-      letter-spacing: .06em;
-      font-size: clamp(22px, 6.2vw, 34px);
-      line-height:1.05;
-      margin: 0 0 8px;
-      max-width:100%;
-      overflow:hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    .kSubLine{
-      margin-top: -2px;
-      font-family: "Times New Roman", Times, serif;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: .18em;
-      color: rgba(246,194,0,.78);
-      font-size: clamp(12px, 3.4vw, 16px);
-      max-width:100%;
-      overflow:hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
+.hex-status{
+  font-size:18px;
+  margin-top:8px;
+}
 
-    .valueRow{
-      margin-top: 8px;
-      display:flex;
-      align-items:flex-end;
-      justify-content:center;
-      gap: 10px;
-      flex-wrap:nowrap;
-      max-width: 100%;
-    }
-    .value{
-      font-family:"DSEG7", monospace;
-      font-weight:700;
-      font-size: clamp(68px, 17vw, 104px);
-      letter-spacing: .04em;
-      line-height: .92;
-      color: var(--gold);
-      text-shadow: 0 0 18px rgba(246,194,0,.16);
-    }
-    .unit{
-      font-family: "Times New Roman", Times, serif;
-      font-weight:700;
-      font-size: clamp(18px, 5.2vw, 26px);
-      letter-spacing: .06em;
-      color: rgba(246,194,0,.80);
-      transform: translateY(-10px);
-      white-space:nowrap;
-    }
+/* 通信速度 */
+.speed{
+  font-family:"DSEG7 Classic", monospace;
+  font-size:52px;
+}
 
-    .divider{
-      width: 92%;
-      margin: 14px auto 10px;
-      border-top: 4px dashed rgba(246,194,0,.55);
-      opacity:.9;
-    }
-    .footer{
-      width:100%;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      gap: 10px;
-      flex-wrap:wrap;
-      font-family: "HPG明朝E", "Hiragino Mincho ProN", "Yu Mincho", "MS Mincho", serif;
-      font-weight: 800;
-      letter-spacing:.10em;
-      color: rgba(246,194,0,.86);
-      font-size: clamp(18px, 4.8vw, 24px);
-      white-space:nowrap;
-    }
+.label{
+  font-size:16px;
+  letter-spacing:.1em;
+  opacity:.85;
+}
 
-    /* ===== Storage style ===== */
-    .barWrap{
-      width:min(92%, 520px);
-      margin-top: 6px;
-      display:flex;
-      flex-direction:column;
-      gap: 10px;
-    }
-    .barLabel{
-      display:flex;
-      align-items:baseline;
-      justify-content:space-between;
-      gap:10px;
-      font-family:"Times New Roman", Times, serif;
-      font-weight:700;
-      letter-spacing:.12em;
-      text-transform:uppercase;
-      color: rgba(246,194,0,.80);
-      font-size: clamp(12px, 3.2vw, 14px);
-      white-space:nowrap;
-    }
-    .bar{
-      height: 12px;
-      border: 1px solid rgba(246,194,0,.45);
-      background: rgba(0,0,0,.25);
-      box-shadow: inset 0 0 12px rgba(246,194,0,.08);
-      position:relative;
-      overflow:hidden;
-    }
-    .bar > i{
-      display:block;
-      height:100%;
-      width:30%;
-      background: linear-gradient(90deg, rgba(246,194,0,.15), rgba(246,194,0,.70), rgba(246,194,0,.25));
-      box-shadow: 0 0 18px rgba(246,194,0,.18);
-    }
-
-    /* ===== Server list ===== */
-    .srvList{
-      width: min(92%, 520px);
-      margin-top: 10px;
-      display:flex;
-      flex-direction:column;
-      gap: 12px;
-    }
-    .srvRow{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap: 10px;
-      padding: 10px 12px;
-      border:1px solid rgba(246,194,0,.28);
-      background: rgba(4,5,6,.35);
-      box-shadow: inset 0 0 14px rgba(246,194,0,.06);
-    }
-    .srvName{
-      display:flex;
-      flex-direction:column;
-      gap:2px;
-      text-align:left;
-      min-width: 0;
-    }
-    .srvName .l1{
-      font-family:"Times New Roman", Times, serif;
-      font-weight:700;
-      letter-spacing:.20em;
-      text-transform:uppercase;
-      color: rgba(246,194,0,.78);
-      font-size: clamp(12px, 3.2vw, 14px);
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-    }
-    .srvName .l2{
-      font-family:"Times New Roman", Times, serif;
-      font-weight:700;
-      letter-spacing:.14em;
-      text-transform:uppercase;
-      color: rgba(246,194,0,.92);
-      font-size: clamp(13px, 3.6vw, 16px);
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-    }
-    .pill{
-      flex:0 0 auto;
-      padding: 8px 10px;
-      border:1px solid rgba(246,194,0,.40);
-      background: rgba(0,0,0,.25);
-      font-family:"HPG明朝E","Yu Mincho","MS Mincho",serif;
-      font-weight:800;
-      letter-spacing:.10em;
-      color: rgba(246,194,0,.88);
-      font-size: clamp(13px, 3.4vw, 15px);
-      white-space:nowrap;
-    }
-
-    @media (orientation: landscape){
-      :root{ --cardW: min(70vw, 520px); }
-      .header{ width:min(82vw, 680px); }
-    }
-  </style>
+/* サーバー */
+.server{
+  font-size:18px;
+  display:flex;
+  justify-content:space-between;
+  margin-top:10px;
+}
+</style>
 </head>
 
 <body>
-  <div class="wrap">
-    <header class="header">
-      <div class="headRow">
-        <div>
-          <div class="title">KAZ-RASPI</div>
-          <div class="subtitle">SERVER STATUS MONITOR</div>
-        </div>
-        <div class="statusBox">
-          <span class="dot" id="sysDot"></span>
-          <span id="sysText">SYSTEM / ONLINE</span>
-        </div>
-      </div>
-      <div class="metaRow">
-        <div id="smallLeft">KAZ-RASPI / MONITOR</div>
-        <div id="smallRight">UPDATE: <span id="upd">1.0</span> S</div>
-      </div>
-    </header>
 
-    <main class="cards" id="cards">
+<header>
+  <h1>KAZ-RASPI</h1>
+  <div class="sub">SERVER STATUS MONITOR / UPDATE 1.0s</div>
+</header>
 
-      <!-- CPU TEMP -->
-      <section class="hex" aria-label="CPU温度">
-        <div class="bgGlow"></div>
-        <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-          <!-- 正六角形（点が上） -->
-          <polygon points="50,0 93.301,25 93.301,75 50,100 6.699,75 6.699,25"
-                   fill="rgba(7,8,9,0.65)" stroke="rgba(246,194,0,0.78)" stroke-width="2.8"/>
-          <polygon points="50,6 88.0,27 88.0,73 50,94 12.0,73 12.0,27"
-                   fill="none" stroke="rgba(246,194,0,0.42)" stroke-width="1.8"/>
-        </svg>
-        <div class="content">
-          <div class="kTitle">CPU温度</div>
-          <div class="valueRow">
-            <div class="value" id="cpuTemp">58</div>
-            <div class="unit">℃</div>
-          </div>
-          <div class="divider"></div>
-          <div class="footer"><span>稼働状態：</span><span id="cpuTempState">通常</span></div>
-        </div>
-      </section>
+<main>
 
-      <!-- CPU UTIL -->
-      <section class="hex" aria-label="CPU稼働率">
-        <div class="bgGlow"></div>
-        <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-          <polygon points="50,0 93.301,25 93.301,75 50,100 6.699,75 6.699,25"
-                   fill="rgba(7,8,9,0.65)" stroke="rgba(246,194,0,0.78)" stroke-width="2.8"/>
-          <polygon points="50,6 88.0,27 88.0,73 50,94 12.0,73 12.0,27"
-                   fill="none" stroke="rgba(246,194,0,0.42)" stroke-width="1.8"/>
-        </svg>
-        <div class="content">
-          <div class="kTitle">CPU稼働率</div>
-          <div class="valueRow">
-            <div class="value" id="cpuUtil">50</div>
-            <div class="unit">%</div>
-          </div>
-          <div class="divider"></div>
-          <div class="footer"><span>稼働状態：</span><span id="cpuUtilState">通常</span></div>
-        </div>
-      </section>
+<!-- CPU 温度 -->
+<div class="hex-wrap">
+<div class="hex">
+<svg viewBox="0 0 100 86.6">
+  <polygon points="50,0 100,25 100,61.6 50,86.6 0,61.6 0,25"
+    fill="none" stroke="var(--eva-yellow)" stroke-width="3"/>
+  <polygon points="50,6 94,28 94,58.6 50,80.6 6,58.6 6,28"
+    fill="none" stroke="var(--eva-yellow)" stroke-width="1"/>
 
-      <!-- MEM UTIL -->
-      <section class="hex" aria-label="メモリ稼働率">
-        <div class="bgGlow"></div>
-        <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-          <polygon points="50,0 93.301,25 93.301,75 50,100 6.699,75 6.699,25"
-                   fill="rgba(7,8,9,0.65)" stroke="rgba(246,194,0,0.78)" stroke-width="2.8"/>
-          <polygon points="50,6 88.0,27 88.0,73 50,94 12.0,73 12.0,27"
-                   fill="none" stroke="rgba(246,194,0,0.42)" stroke-width="1.8"/>
-        </svg>
-        <div class="content">
-          <div class="kTitle">メモリ稼働率</div>
-          <div class="valueRow">
-            <div class="value" id="memUtil">63</div>
-            <div class="unit">%</div>
-          </div>
-          <div class="divider"></div>
-          <div class="footer"><span>稼働状態：</span><span id="memUtilState">通常</span></div>
-        </div>
-      </section>
+  <text x="50" y="24" text-anchor="middle" class="hex-title">CPU温度</text>
+  <text x="50" y="50" text-anchor="middle" class="hex-value">62</text>
+  <text x="72" y="50" class="hex-unit">℃</text>
+  <text x="50" y="72" text-anchor="middle" class="hex-status">稼働状態：通常</text>
+</svg>
+</div>
+</div>
 
-      <!-- NET DOWNLOAD -->
-      <section class="hex" aria-label="通信速度 DOWNLOAD">
-        <div class="bgGlow"></div>
-        <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-          <polygon points="50,0 93.301,25 93.301,75 50,100 6.699,75 6.699,25"
-                   fill="rgba(7,8,9,0.65)" stroke="rgba(246,194,0,0.78)" stroke-width="2.8"/>
-          <polygon points="50,6 88.0,27 88.0,73 50,94 12.0,73 12.0,27"
-                   fill="none" stroke="rgba(246,194,0,0.42)" stroke-width="1.8"/>
-        </svg>
-        <div class="content">
-          <div class="kTitle2">通信速度</div>
-          <div class="kSubLine">《DOWNLOAD》</div>
-          <div class="valueRow" style="margin-top:12px;">
-            <div class="value" id="netDown">121</div>
-            <div class="unit">Mbps</div>
-          </div>
-          <div class="divider"></div>
-          <div class="footer"><span>稼働状態：</span><span id="netDownState">通常</span></div>
-        </div>
-      </section>
+<!-- CPU 稼働率 -->
+<div class="hex-wrap">
+<div class="hex">
+<svg viewBox="0 0 100 86.6">
+  <polygon points="50,0 100,25 100,61.6 50,86.6 0,61.6 0,25"
+    fill="none" stroke="var(--eva-yellow)" stroke-width="3"/>
+  <polygon points="50,6 94,28 94,58.6 50,80.6 6,58.6 6,28"
+    fill="none" stroke="var(--eva-yellow)" stroke-width="1"/>
 
-      <!-- NET UPLOAD -->
-      <section class="hex" aria-label="通信速度 UPLOAD">
-        <div class="bgGlow"></div>
-        <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-          <polygon points="50,0 93.301,25 93.301,75 50,100 6.699,75 6.699,25"
-                   fill="rgba(7,8,9,0.65)" stroke="rgba(246,194,0,0.78)" stroke-width="2.8"/>
-          <polygon points="50,6 88.0,27 88.0,73 50,94 12.0,73 12.0,27"
-                   fill="none" stroke="rgba(246,194,0,0.42)" stroke-width="1.8"/>
-        </svg>
-        <div class="content">
-          <div class="kTitle2">通信速度</div>
-          <div class="kSubLine">《UPLOAD》</div>
-          <div class="valueRow" style="margin-top:12px;">
-            <div class="value" id="netUp">35</div>
-            <div class="unit">Mbps</div>
-          </div>
-          <div class="divider"></div>
-          <div class="footer"><span>稼働状態：</span><span id="netUpState">通常</span></div>
-        </div>
-      </section>
+  <text x="50" y="24" text-anchor="middle" class="hex-title">CPU稼働率</text>
+  <text x="50" y="50" text-anchor="middle" class="hex-value">45</text>
+  <text x="72" y="50" class="hex-unit">%</text>
+  <text x="50" y="72" text-anchor="middle" class="hex-status">稼働状態：通常</text>
+</svg>
+</div>
+</div>
 
-      <!-- STORAGE SD -->
-      <section class="hex" aria-label="SDカード 記憶容量">
-        <div class="bgGlow"></div>
-        <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-          <polygon points="50,0 93.301,25 93.301,75 50,100 6.699,75 6.699,25"
-                   fill="rgba(7,8,9,0.65)" stroke="rgba(246,194,0,0.78)" stroke-width="2.8"/>
-          <polygon points="50,6 88.0,27 88.0,73 50,94 12.0,73 12.0,27"
-                   fill="none" stroke="rgba(246,194,0,0.42)" stroke-width="1.8"/>
-        </svg>
-        <div class="content">
-          <div class="kTitle">記憶容量</div>
+<!-- メモリ -->
+<div class="hex-wrap">
+<div class="hex">
+<svg viewBox="0 0 100 86.6">
+  <polygon points="50,0 100,25 100,61.6 50,86.6 0,61.6 0,25"
+    fill="none" stroke="var(--eva-yellow)" stroke-width="3"/>
+  <polygon points="50,6 94,28 94,58.6 50,80.6 6,58.6 6,28"
+    fill="none" stroke="var(--eva-yellow)" stroke-width="1"/>
 
-          <div class="barWrap">
-            <div class="barLabel">
-              <span>SDカード</span>
-              <span id="sdText">USED 18.1 / 58.3 GB (31%)</span>
-            </div>
-            <div class="bar"><i id="sdBar" style="width:31%"></i></div>
-          </div>
+  <text x="50" y="24" text-anchor="middle" class="hex-title">メモリ稼働率</text>
+  <text x="50" y="50" text-anchor="middle" class="hex-value">60</text>
+  <text x="72" y="50" class="hex-unit">%</text>
+  <text x="50" y="72" text-anchor="middle" class="hex-status">稼働状態：通常</text>
+</svg>
+</div>
+</div>
 
-          <div class="divider"></div>
-          <div class="footer"><span>稼働状態：</span><span id="sdState">通常</span></div>
-        </div>
-      </section>
+<!-- DOWNLOAD -->
+<div class="hex-wrap">
+<div class="hex">
+<svg viewBox="0 0 100 86.6">
+  <polygon points="50,0 100,25 100,61.6 50,86.6 0,61.6 0,25"
+    fill="none" stroke="var(--eva-yellow)" stroke-width="3"/>
+  <text x="50" y="24" text-anchor="middle" class="hex-title">通信速度</text>
+  <text x="50" y="50" text-anchor="middle" class="speed">121</text>
+  <text x="50" y="72" text-anchor="middle" class="label">DOWNLOAD</text>
+</svg>
+</div>
+</div>
 
-      <!-- STORAGE HDD -->
-      <section class="hex" aria-label="外付けHDD 記憶容量">
-        <div class="bgGlow"></div>
-        <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-          <polygon points="50,0 93.301,25 93.301,75 50,100 6.699,75 6.699,25"
-                   fill="rgba(7,8,9,0.65)" stroke="rgba(246,194,0,0.78)" stroke-width="2.8"/>
-          <polygon points="50,6 88.0,27 88.0,73 50,94 12.0,73 12.0,27"
-                   fill="none" stroke="rgba(246,194,0,0.42)" stroke-width="1.8"/>
-        </svg>
-        <div class="content">
-          <div class="kTitle">記憶容量</div>
+<!-- UPLOAD -->
+<div class="hex-wrap">
+<div class="hex">
+<svg viewBox="0 0 100 86.6">
+  <polygon points="50,0 100,25 100,61.6 50,86.6 0,61.6 0,25"
+    fill="none" stroke="var(--eva-yellow)" stroke-width="3"/>
+  <text x="50" y="24" text-anchor="middle" class="hex-title">通信速度</text>
+  <text x="50" y="50" text-anchor="middle" class="speed">35</text>
+  <text x="50" y="72" text-anchor="middle" class="label">UPLOAD</text>
+</svg>
+</div>
+</div>
 
-          <div class="barWrap">
-            <div class="barLabel">
-              <span>外付けHDD</span>
-              <span id="hddText">USED 210 / 1000 GB (21%)</span>
-            </div>
-            <div class="bar"><i id="hddBar" style="width:21%"></i></div>
-          </div>
+<!-- サーバー -->
+<div class="hex-wrap">
+<div class="hex">
+<svg viewBox="0 0 100 86.6">
+  <polygon points="50,0 100,25 100,61.6 50,86.6 0,61.6 0,25"
+    fill="none" stroke="var(--eva-yellow)" stroke-width="3"/>
+  <text x="50" y="22" text-anchor="middle" class="hex-title">サーバー稼働状況</text>
 
-          <div class="divider"></div>
-          <div class="footer"><span>稼働状態：</span><span id="hddState">通常</span></div>
-        </div>
-      </section>
+  <text x="20" y="42" class="label">GOJA</text>
+  <text x="20" y="52">DENPO-SERVER</text>
+  <text x="70" y="52">稼働中</text>
 
-      <!-- SERVICES -->
-      <section class="hex" aria-label="サーバー稼働状況">
-        <div class="bgGlow"></div>
-        <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-          <polygon points="50,0 93.301,25 93.301,75 50,100 6.699,75 6.699,25"
-                   fill="rgba(7,8,9,0.65)" stroke="rgba(246,194,0,0.78)" stroke-width="2.8"/>
-          <polygon points="50,6 88.0,27 88.0,73 50,94 12.0,73 12.0,27"
-                   fill="none" stroke="rgba(246,194,0,0.42)" stroke-width="1.8"/>
-        </svg>
-        <div class="content">
-          <div class="kTitle">サーバー稼働状況</div>
+  <text x="20" y="64" class="label">GOJA</text>
+  <text x="20" y="74">CLOUD-SERVER</text>
+  <text x="70" y="74">稼働中</text>
+</svg>
+</div>
+</div>
 
-          <div class="srvList" style="margin-top:6px;">
-            <div class="srvRow">
-              <div class="srvName">
-                <div class="l1">GOJA</div>
-                <div class="l2">DENPO-SERVER</div>
-              </div>
-              <div class="pill" id="svcDenpo">稼働中…</div>
-            </div>
-
-            <div class="srvRow">
-              <div class="srvName">
-                <div class="l1">GOJA</div>
-                <div class="l2">CLOUD-SERVER</div>
-              </div>
-              <div class="pill" id="svcCloud">稼働中…</div>
-            </div>
-          </div>
-
-          <div class="divider"></div>
-          <div class="footer"><span>稼働状態：</span><span id="svcState">通常</span></div>
-        </div>
-      </section>
-
-    </main>
-  </div>
-
-  <script>
-    const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
-    function ema(prev, target, alpha){ return prev + (target - prev) * alpha; }
-
-    const TH = {
-      temp: { caution: 70, warn: 80 },
-      util: { caution: 85, warn: 95 },
-      mem:  { caution: 85, warn: 95 },
-      net:  { caution: 10, warn: 3 },
-      sd:   { caution: 85, warn: 95 },
-      hdd:  { caution: 85, warn: 95 }
-    };
-
-    const el = {
-      cpuTemp: document.getElementById("cpuTemp"),
-      cpuUtil: document.getElementById("cpuUtil"),
-      memUtil: document.getElementById("memUtil"),
-      netDown: document.getElementById("netDown"),
-      netUp: document.getElementById("netUp"),
-
-      cpuTempState: document.getElementById("cpuTempState"),
-      cpuUtilState: document.getElementById("cpuUtilState"),
-      memUtilState: document.getElementById("memUtilState"),
-      netDownState: document.getElementById("netDownState"),
-      netUpState: document.getElementById("netUpState"),
-      sdState: document.getElementById("sdState"),
-      hddState: document.getElementById("hddState"),
-      svcState: document.getElementById("svcState"),
-
-      sdText: document.getElementById("sdText"),
-      hddText: document.getElementById("hddText"),
-      sdBar: document.getElementById("sdBar"),
-      hddBar: document.getElementById("hddBar"),
-
-      svcDenpo: document.getElementById("svcDenpo"),
-      svcCloud: document.getElementById("svcCloud"),
-
-      sysDot: document.getElementById("sysDot"),
-      sysText: document.getElementById("sysText"),
-      upd: document.getElementById("upd")
-    };
-
-    const state = {
-      cpuTemp: 58, cpuUtil: 50, memUtil: 63,
-      netDown: 121, netUp: 35,
-      sdUsed: 18.1, sdTotal: 58.3,
-      hddUsed: 210, hddTotal: 1000,
-      denpo: true, cloud: true
-    };
-
-    const target = {
-      cpuTemp: 62, cpuUtil: 46, memUtil: 61,
-      netDown: 95, netUp: 28,
-      sdUsed: 18.2, hddUsed: 212
-    };
-
-    function gradeLabel(val, th){
-      if(val >= th.warn) return "警戒";
-      if(val >= th.caution) return "注意";
-      return "通常";
-    }
-    function gradeNet(val){
-      if(val <= TH.net.warn) return "警戒";
-      if(val <= TH.net.caution) return "注意";
-      return "通常";
-    }
-    function setSysOnline(isOnline){
-      el.sysText.textContent = isOnline ? "SYSTEM / ONLINE" : "SYSTEM / OFFLINE";
-      el.sysDot.style.opacity = isOnline ? "1" : ".35";
-      el.sysDot.style.filter = isOnline ? "none" : "grayscale(1)";
-    }
-
-    function tick(){
-      if(Math.random() < 0.18){
-        target.cpuTemp = clamp(target.cpuTemp + (Math.random()*6 - 3), 45, 85);
-        target.cpuUtil = clamp(target.cpuUtil + (Math.random()*10 - 5), 5, 98);
-        target.memUtil = clamp(target.memUtil + (Math.random()*6 - 3), 10, 95);
-        target.netDown = clamp(target.netDown + (Math.random()*40 - 20), 1, 999);
-        target.netUp   = clamp(target.netUp   + (Math.random()*20 - 10), 1, 999);
-
-        target.sdUsed  = clamp(target.sdUsed + (Math.random()*0.20 - 0.05), 0, state.sdTotal);
-        target.hddUsed = clamp(target.hddUsed + (Math.random()*2.0 - 0.5), 0, state.hddTotal);
-      }
-
-      state.cpuTemp = ema(state.cpuTemp, target.cpuTemp, 0.10);
-      state.cpuUtil = ema(state.cpuUtil, target.cpuUtil, 0.12);
-      state.memUtil = ema(state.memUtil, target.memUtil, 0.10);
-      state.netDown = ema(state.netDown, target.netDown, 0.10);
-      state.netUp   = ema(state.netUp, target.netUp, 0.10);
-      state.sdUsed  = ema(state.sdUsed, target.sdUsed, 0.08);
-      state.hddUsed = ema(state.hddUsed, target.hddUsed, 0.06);
-
-      const cpuTempI = Math.round(state.cpuTemp);
-      const cpuUtilI = Math.round(state.cpuUtil);
-      const memUtilI = Math.round(state.memUtil);
-      const netDownI = Math.round(state.netDown);
-      const netUpI   = Math.round(state.netUp);
-
-      el.cpuTemp.textContent = cpuTempI;
-      el.cpuUtil.textContent = cpuUtilI;
-      el.memUtil.textContent = memUtilI;
-      el.netDown.textContent = netDownI;
-      el.netUp.textContent   = netUpI;
-
-      el.cpuTempState.textContent = gradeLabel(cpuTempI, TH.temp);
-      el.cpuUtilState.textContent = gradeLabel(cpuUtilI, TH.util);
-      el.memUtilState.textContent = gradeLabel(memUtilI, TH.mem);
-      el.netDownState.textContent = gradeNet(netDownI);
-      el.netUpState.textContent   = gradeNet(netUpI);
-
-      const sdPct  = Math.round((state.sdUsed / state.sdTotal) * 100);
-      const hddPct = Math.round((state.hddUsed / state.hddTotal) * 100);
-
-      el.sdText.textContent  = `USED ${state.sdUsed.toFixed(1)} / ${state.sdTotal.toFixed(1)} GB (${sdPct}%)`;
-      el.hddText.textContent = `USED ${Math.round(state.hddUsed)} / ${Math.round(state.hddTotal)} GB (${hddPct}%)`;
-
-      el.sdBar.style.width  = `${clamp(sdPct, 0, 100)}%`;
-      el.hddBar.style.width = `${clamp(hddPct, 0, 100)}%`;
-
-      el.sdState.textContent  = gradeLabel(sdPct, TH.sd);
-      el.hddState.textContent = gradeLabel(hddPct, TH.hdd);
-
-      el.svcDenpo.textContent = state.denpo ? "稼働中…" : "停止";
-      el.svcCloud.textContent = state.cloud ? "稼働中…" : "停止";
-      el.svcState.textContent = (state.denpo && state.cloud) ? "通常" : "注意";
-
-      setSysOnline(true);
-    }
-
-    const UPDATE_SEC = 1.0;
-    el.upd.textContent = UPDATE_SEC.toFixed(1);
-
-    tick();
-    setInterval(tick, UPDATE_SEC * 1000);
-  </script>
+</main>
 </body>
 </html>
