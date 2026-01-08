@@ -57,8 +57,9 @@
     .hexbox{
       position:relative;
       width:100%;
-      height: min(30vh, 250px); /* ← でかすぎ問題を潰す */
-      min-height: 200px;        /* ← 小さすぎ保険 */
+      aspect-ratio:1 / 1
+      height: auto; /* ← でかすぎ問題を潰す */
+      min-height: 420px;        /* ← 小さすぎ保険 */
     }
 
     .hexsvg{
