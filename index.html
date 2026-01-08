@@ -3,69 +3,142 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>GOJA UI Tuner (Square +/−)</title>
+  <title>GOJA NERV Monitor</title>
 
-  <!-- Fonts（数字=デジタル寄り / 日本語=明朝寄り） -->
+  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Noto+Serif+JP:wght@600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@600;700&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
+
+  <!-- 7セグ（DSEG）: 失敗してもOrbitronにフォールバック -->
+  <style>
+    @font-face{
+      font-family: "DSEG7";
+      src: url("https://cdn.jsdelivr.net/gh/keshikan/DSEG@master/fonts/DSEG7Classic-Bold.woff2") format("woff2");
+      font-display: swap;
+    }
+  </style>
 
   <style>
     :root{
       --bg:#000;
-      --gold:#f4b000;
+      --gold:#f4b000;          /* エヴァ寄り黄 */
+      --goldDim: rgba(244,176,0,.55);
+      --whiteDim: rgba(255,255,255,.70);
 
-      /* 調整対象（JSで更新） */
-      --titleY: 0px;
-      --numY: 0px;
-      --dashY: 0px;
-      --statusY: 0px;
+      /* ===== あなたがくれたGOJA TUNER値（固定） ===== */
+      --titleY: 19px;
+      --numY: 4px;
+      --dashY: -2px;
+      --statusY: -10px;
 
-      --titleSize: 22px;
-      --numSize: 92px;
-      --statusSize: 20px;
+      --titleSize: 33px;
+      --numSize: 112px;
+      --statusSize: 28px;
 
       --dashW: 220px;
+
+      /* ===== Layout ===== */
+      --pad: 14px;
+      --cardRadius: 22px;
+      --cardH: 178px; /* 縦を詰めつつ数字が入る高さ */
     }
 
     *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
     html,body{ height:100%; margin:0; background:var(--bg); color:#fff; }
-
     body{
-      display:flex;
-      justify-content:center;
-      align-items:flex-start;
-      padding: 20px 14px 160px;
       font-feature-settings: "palt" 1;
+      overflow-x:hidden;
     }
 
-    .wrap{ width:min(560px, 100%); }
+    .app{
+      max-width: 760px;
+      margin: 0 auto;
+      padding: calc(14px + env(safe-area-inset-top)) var(--pad) calc(18px + env(safe-area-inset-bottom));
+    }
 
-    .card{
-      width:100%;
-      aspect-ratio: 1 / 1;           /* ←縦長防止 */
-      background:#000;               /* ←背景は真っ黒 */
-      border-radius: 22px;
-      position: relative;
-      overflow:hidden;
-      box-shadow: 0 0 0 1px rgba(255,255,255,.06), 0 20px 60px rgba(0,0,0,.55);
+    /* ===== Header ===== */
+    .topbar{
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap: 12px;
       margin-bottom: 14px;
     }
-
-    /* 四角枠（外枠+内枠）※六角形は一切なし */
-    svg.frame{
-      position:absolute; inset:0;
-      width:100%; height:100%;
-      pointer-events:none;
-      filter: drop-shadow(0 0 12px rgba(244,176,0,.18));
+    .leftTitle{
+      display:flex;
+      flex-direction:column;
+      gap: 4px;
+    }
+    .host{
+      font-family: "Times New Roman", Times, serif;
+      font-weight: 700;
+      font-size: 18px;
+      letter-spacing: .08em;
+      color: rgba(255,255,255,.88);
+      text-transform: uppercase;
+    }
+    .sub{
+      font-family: "Times New Roman", Times, serif;
+      font-weight: 700;
+      font-size: 12px;
+      letter-spacing: .18em;
+      color: rgba(244,176,0,.70);
+      text-transform: uppercase;
+    }
+    .stamp{
+      text-align:right;
+      font-family: "Times New Roman", Times, serif;
+      font-weight: 700;
+      font-size: 12px;
+      letter-spacing: .18em;
+      color: rgba(255,255,255,.55);
+      text-transform: uppercase;
     }
 
-    .layer{ position:absolute; inset:0; pointer-events:none; }
+    /* ===== Cards grid ===== */
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
 
+    /* ===== Card base ===== */
+    .card{
+      position: relative;
+      height: var(--cardH);
+      border-radius: var(--cardRadius);
+      background: #000; /* 真っ黒 */
+      overflow: hidden;
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,.06),
+        0 18px 50px rgba(0,0,0,.65);
+    }
+
+    /* 外枠 + 内枠（四角のみ） */
+    .card::before{
+      content:"";
+      position:absolute;
+      inset: 14px;
+      border-radius: 18px;
+      border: 5px solid rgba(244,176,0,.98);
+      pointer-events:none;
+      filter: drop-shadow(0 0 10px rgba(244,176,0,.12));
+    }
+    .card::after{
+      content:"";
+      position:absolute;
+      inset: 24px;
+      border-radius: 14px;
+      border: 3px solid rgba(244,176,0,.48);
+      pointer-events:none;
+    }
+
+    /* Content positioning */
     .title{
       position:absolute;
-      left:50%;
-      top:20%;
+      left: 50%;
+      top: 26%;
       transform: translate(-50%,-50%) translateY(var(--titleY));
       font-family: "Noto Serif JP","Yu Mincho","Hiragino Mincho ProN",serif;
       font-weight: 700;
@@ -74,52 +147,57 @@
       color: var(--gold);
       text-shadow: 0 0 10px rgba(244,176,0,.12);
       white-space: nowrap;
+      user-select:none;
     }
 
     .numRow{
       position:absolute;
       left:50%;
-      top:44%;
+      top: 56%;
       transform: translate(-50%,-50%) translateY(var(--numY));
       display:flex;
       align-items: baseline;
       gap: 10px;
       white-space: nowrap;
+      user-select:none;
     }
 
     .num{
-      font-family: "Orbitron", ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-family: "DSEG7","Orbitron", ui-monospace, SFMono-Regular, Menlo, monospace;
       font-weight: 700;
       font-size: var(--numSize);
       line-height: 1;
       letter-spacing: .02em;
       color: var(--gold);
-      text-shadow: 0 0 14px rgba(244,176,0,.12);
+      text-shadow: 0 0 14px rgba(244,176,0,.10);
+      transition: transform .25s ease, opacity .25s ease;
     }
 
     .unit{
-      font-family: "Orbitron", ui-monospace, SFMono-Regular, Menlo, monospace;
-      font-weight: 600;
-      font-size: calc(var(--numSize) * 0.28);
-      opacity: .85;
+      font-family: "Times New Roman", Times, serif;
+      font-weight: 700;
+      font-size: 26px;
+      letter-spacing: .08em;
       color: rgba(255,255,255,.62);
+      transform: translateY(-6px);
     }
 
     .dash{
       position:absolute;
       left:50%;
-      top:64%;
+      top: 76%;
       transform: translate(-50%,-50%) translateY(var(--dashY));
       width: var(--dashW);
       height: 0;
       border-top: 3px dashed rgba(244,176,0,.55);
-      filter: drop-shadow(0 0 6px rgba(244,176,0,.10));
+      filter: drop-shadow(0 0 6px rgba(244,176,0,.08));
+      user-select:none;
     }
 
     .status{
       position:absolute;
       left:50%;
-      top:76%;
+      top: 86%;
       transform: translate(-50%,-50%) translateY(var(--statusY));
       font-family: "Noto Serif JP","Yu Mincho","Hiragino Mincho ProN",serif;
       font-weight: 700;
@@ -128,439 +206,291 @@
       color: rgba(244,176,0,.92);
       white-space: nowrap;
       text-shadow: 0 0 10px rgba(244,176,0,.10);
-    }
-
-    /* ===== Control panel (スケスケ) ===== */
-    .panel{
-      position: fixed;
-      left: 12px;
-      right: 12px;
-      bottom: calc(12px + env(safe-area-inset-bottom));
-      max-width: 760px;
-      margin: 0 auto;
-      border-radius: 18px;
-      background: rgba(0,0,0,.28);
-      border: 1px solid rgba(255,255,255,.12);
-      box-shadow: 0 16px 40px rgba(0,0,0,.55);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      overflow: hidden;
-      color: rgba(255,255,255,.92);
-      font-family: system-ui, -apple-system, "SF Pro Display", sans-serif;
-    }
-
-    .panelHeader{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      padding: 10px 12px;
-    }
-
-    .panelTitle{
-      font-weight: 650;
-      font-size: 14px;
-      letter-spacing: .02em;
-    }
-    .panelHint{
-      margin-top: 2px;
-      font-size: 12px;
-      color: rgba(255,255,255,.75);
-    }
-
-    .btn{
-      appearance:none;
-      border: 1px solid rgba(255,255,255,.18);
-      background: rgba(255,255,255,.06);
-      color: rgba(255,255,255,.92);
-      padding: 8px 12px;
-      border-radius: 14px;
-      font-weight: 650;
-      font-size: 12px;
-    }
-    .btn:active{ transform: translateY(1px); }
-
-    .panelBody{
-      display:none;
-      padding: 10px 12px 12px;
-      max-height: 46vh;
-      overflow:auto;
-      -webkit-overflow-scrolling: touch;
-      touch-action: pan-y;
-    }
-
-    .row{
-      background: rgba(255,255,255,.04);
-      border: 1px solid rgba(255,255,255,.08);
-      border-radius: 14px;
-      padding: 10px;
-      margin-bottom: 10px;
-    }
-
-    .rowTop{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      margin-bottom: 10px;
-    }
-
-    .label{
-      font-size: 13px;
-      font-weight: 650;
-    }
-
-    .value{
-      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-      font-size: 12px;
-      color: rgba(255,255,255,.75);
-      min-width: 92px;
-      text-align:right;
-    }
-
-    .stepper{
-      display:grid;
-      grid-template-columns: 56px 1fr 56px;
-      gap: 10px;
-      align-items:center;
-    }
-
-    .stepBtn{
-      appearance:none;
-      border: 1px solid rgba(255,255,255,.16);
-      background: rgba(255,255,255,.08);
-      color: rgba(255,255,255,.92);
-      height: 44px;
-      border-radius: 14px;
-      font-size: 18px;
-      font-weight: 800;
-      line-height: 1;
-      user-select:none;
-      touch-action: manipulation;
-    }
-    .stepBtn:active{ transform: translateY(1px); }
-
-    .stepMid{
-      height: 44px;
-      border-radius: 14px;
-      border: 1px solid rgba(255,255,255,.10);
-      background: rgba(0,0,0,.18);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-      font-size: 13px;
-      color: rgba(255,255,255,.80);
-      letter-spacing: .02em;
       user-select:none;
     }
 
-    .actions{
-      display:flex;
-      gap: 10px;
-      margin-top: 10px;
+    /* ===== Variants ===== */
+    .unit-small .unit{ font-size: 18px; transform: translateY(-10px); }
+    .unit-none .unit{ display:none; }
+
+    /* server card: main text 2-line, not big number */
+    .server .numRow{
+      top: 58%;
+      gap: 0;
+      flex-direction: column;
+      align-items: center;
+      transform: translate(-50%,-50%) translateY(var(--numY));
     }
-    .actions .btn{
-      flex:1;
-      padding: 12px 12px;
-      border-radius: 16px;
-      font-size: 13px;
+    .server .num{
+      font-family: "Times New Roman", Times, serif;
       font-weight: 700;
+      font-size: 38px;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      color: var(--gold);
+    }
+    .server .num.line2{
+      font-size: 28px;
+      letter-spacing: .14em;
+      color: rgba(255,255,255,.78);
+      margin-top: 4px;
+    }
+    .server .unit{ display:none; }
+
+    /* storage card: show USED/TOTAL */
+    .storage .num{
+      font-family: "DSEG7","Orbitron", ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 74px;
+    }
+    .storage .unit{
+      font-size: 16px;
+      transform: translateY(-12px);
+      letter-spacing: .12em;
+      color: rgba(255,255,255,.58);
     }
 
-    .toast{
-      position: fixed;
-      left: 50%;
-      bottom: calc(92px + env(safe-area-inset-bottom));
-      transform: translateX(-50%);
-      padding: 10px 14px;
-      background: rgba(0,0,0,.65);
-      border: 1px solid rgba(255,255,255,.14);
-      border-radius: 999px;
-      color: rgba(255,255,255,.92);
-      font-size: 13px;
-      font-weight: 650;
-      display:none;
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      max-width: 92vw;
-      text-align:center;
+    /* speed cards */
+    .speed .title{
+      letter-spacing: .10em;
     }
+    .speed .status{
+      color: rgba(255,255,255,.58);
+    }
+
+    /* tiny footer spacing */
+    .footerSpace{ height: 4px; }
   </style>
 </head>
 
 <body>
-  <div class="wrap">
-    <div class="card">
-      <!-- 四角枠（外枠+内枠） -->
-      <svg class="frame" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-        <rect x="7" y="7" width="86" height="86" rx="18" ry="18"
-              fill="none" stroke="rgba(244,176,0,0.98)" stroke-width="5" />
-        <rect x="14" y="14" width="72" height="72" rx="14" ry="14"
-              fill="none" stroke="rgba(244,176,0,0.48)" stroke-width="3" />
-      </svg>
+  <div class="app">
+    <div class="topbar">
+      <div class="leftTitle">
+        <div class="host">KAZ-RASPI</div>
+        <div class="sub">GOJA NERV MONITOR</div>
+      </div>
+      <div class="stamp" id="stamp">—</div>
+    </div>
 
-      <div class="layer">
-        <div class="title">メモリ稼働率</div>
-
+    <div class="grid">
+      <!-- CPU TEMP -->
+      <div class="card unit-small" id="cardCpuTemp">
+        <div class="title">CPU温度</div>
         <div class="numRow">
-          <div class="num">60</div>
+          <div class="num" id="cpuTemp">58</div>
+          <div class="unit">℃</div>
+        </div>
+        <div class="dash"></div>
+        <div class="status" id="cpuTempStatus">稼働状態：通常</div>
+      </div>
+
+      <!-- CPU USAGE -->
+      <div class="card unit-none" id="cardCpuUsage">
+        <div class="title">CPU稼働率</div>
+        <div class="numRow">
+          <div class="num" id="cpuUsage">42</div>
           <div class="unit">%</div>
         </div>
-
         <div class="dash"></div>
-
-        <div class="status">稼働状態：通常</div>
+        <div class="status" id="cpuUsageStatus">稼働状態：通常</div>
       </div>
+
+      <!-- MEM USAGE -->
+      <div class="card unit-none" id="cardMemUsage">
+        <div class="title">メモリ稼働率</div>
+        <div class="numRow">
+          <div class="num" id="memUsage">60</div>
+          <div class="unit">%</div>
+        </div>
+        <div class="dash"></div>
+        <div class="status" id="memUsageStatus">稼働状態：通常</div>
+      </div>
+
+      <!-- SPEED UP -->
+      <div class="card speed unit-small" id="cardUp">
+        <div class="title">通信速度《UPLOAD》</div>
+        <div class="numRow">
+          <div class="num" id="upSpeed">18</div>
+          <div class="unit">Mbps</div>
+        </div>
+        <div class="dash"></div>
+        <div class="status" id="upStatus">更新：—</div>
+      </div>
+
+      <!-- SPEED DOWN -->
+      <div class="card speed unit-small" id="cardDown">
+        <div class="title">通信速度《DOWNLOAD》</div>
+        <div class="numRow">
+          <div class="num" id="downSpeed">92</div>
+          <div class="unit">Mbps</div>
+        </div>
+        <div class="dash"></div>
+        <div class="status" id="downStatus">更新：—</div>
+      </div>
+
+      <!-- SD CARD -->
+      <div class="card storage unit-small" id="cardSD">
+        <div class="title">SDカード容量</div>
+        <div class="numRow">
+          <div class="num" id="sdUsed">31</div>
+          <div class="unit" id="sdUnit">GB / 64GB</div>
+        </div>
+        <div class="dash"></div>
+        <div class="status" id="sdStatus">稼働状態：通常</div>
+      </div>
+
+      <!-- HDD -->
+      <div class="card storage unit-small" id="cardHDD">
+        <div class="title">HDD容量</div>
+        <div class="numRow">
+          <div class="num" id="hddUsed">120</div>
+          <div class="unit" id="hddUnit">GB / 1000GB</div>
+        </div>
+        <div class="dash"></div>
+        <div class="status" id="hddStatus">稼働状態：通常</div>
+      </div>
+
+      <!-- SERVER: DENPO -->
+      <div class="card server" id="cardDenpo">
+        <div class="title">サーバー稼働</div>
+        <div class="numRow">
+          <div class="num">GOJA</div>
+          <div class="num line2">DENPO-SERVER</div>
+        </div>
+        <div class="dash"></div>
+        <div class="status" id="denpoStatus">稼働中...</div>
+      </div>
+
+      <!-- SERVER: CLOUD -->
+      <div class="card server" id="cardCloud">
+        <div class="title">サーバー稼働</div>
+        <div class="numRow">
+          <div class="num">GOJA</div>
+          <div class="num line2">CLOUD-SERVER</div>
+        </div>
+        <div class="dash"></div>
+        <div class="status" id="cloudStatus">稼働中...</div>
+      </div>
+
+      <div class="footerSpace"></div>
     </div>
   </div>
-
-  <!-- Panel -->
-  <div class="panel" id="panel">
-    <div class="panelHeader">
-      <div>
-        <div class="panelTitle">調整（＋／−）</div>
-        <div class="panelHint">ボタンで位置/サイズ/点線を決めたら COPY → そのまま送れ。</div>
-      </div>
-      <button class="btn" id="toggleBtn">SHOW</button>
-    </div>
-
-    <div class="panelBody" id="panelBody">
-      <!-- 位置Y -->
-      <div class="row" data-key="titleY" data-unit="px" data-step="2" data-min="-200" data-max="200">
-        <div class="rowTop"><div class="label">題目 Y</div><div class="value" id="v-titleY"></div></div>
-        <div class="stepper">
-          <button class="stepBtn" data-act="minus">−</button>
-          <div class="stepMid" id="m-titleY"></div>
-          <button class="stepBtn" data-act="plus">＋</button>
-        </div>
-      </div>
-
-      <div class="row" data-key="numY" data-unit="px" data-step="2" data-min="-220" data-max="220">
-        <div class="rowTop"><div class="label">数字 Y</div><div class="value" id="v-numY"></div></div>
-        <div class="stepper">
-          <button class="stepBtn" data-act="minus">−</button>
-          <div class="stepMid" id="m-numY"></div>
-          <button class="stepBtn" data-act="plus">＋</button>
-        </div>
-      </div>
-
-      <div class="row" data-key="dashY" data-unit="px" data-step="2" data-min="-220" data-max="220">
-        <div class="rowTop"><div class="label">点線 Y</div><div class="value" id="v-dashY"></div></div>
-        <div class="stepper">
-          <button class="stepBtn" data-act="minus">−</button>
-          <div class="stepMid" id="m-dashY"></div>
-          <button class="stepBtn" data-act="plus">＋</button>
-        </div>
-      </div>
-
-      <div class="row" data-key="statusY" data-unit="px" data-step="2" data-min="-220" data-max="220">
-        <div class="rowTop"><div class="label">稼働状態 Y</div><div class="value" id="v-statusY"></div></div>
-        <div class="stepper">
-          <button class="stepBtn" data-act="minus">−</button>
-          <div class="stepMid" id="m-statusY"></div>
-          <button class="stepBtn" data-act="plus">＋</button>
-        </div>
-      </div>
-
-      <!-- サイズ -->
-      <div class="row" data-key="titleSize" data-unit="px" data-step="1" data-min="10" data-max="46">
-        <div class="rowTop"><div class="label">題目 サイズ</div><div class="value" id="v-titleSize"></div></div>
-        <div class="stepper">
-          <button class="stepBtn" data-act="minus">−</button>
-          <div class="stepMid" id="m-titleSize"></div>
-          <button class="stepBtn" data-act="plus">＋</button>
-        </div>
-      </div>
-
-      <div class="row" data-key="numSize" data-unit="px" data-step="2" data-min="40" data-max="170">
-        <div class="rowTop"><div class="label">数字 サイズ</div><div class="value" id="v-numSize"></div></div>
-        <div class="stepper">
-          <button class="stepBtn" data-act="minus">−</button>
-          <div class="stepMid" id="m-numSize"></div>
-          <button class="stepBtn" data-act="plus">＋</button>
-        </div>
-      </div>
-
-      <div class="row" data-key="statusSize" data-unit="px" data-step="1" data-min="10" data-max="40">
-        <div class="rowTop"><div class="label">稼働状態 サイズ</div><div class="value" id="v-statusSize"></div></div>
-        <div class="stepper">
-          <button class="stepBtn" data-act="minus">−</button>
-          <div class="stepMid" id="m-statusSize"></div>
-          <button class="stepBtn" data-act="plus">＋</button>
-        </div>
-      </div>
-
-      <!-- 点線長さ -->
-      <div class="row" data-key="dashW" data-unit="px" data-step="5" data-min="80" data-max="460">
-        <div class="rowTop"><div class="label">点線 長さ</div><div class="value" id="v-dashW"></div></div>
-        <div class="stepper">
-          <button class="stepBtn" data-act="minus">−</button>
-          <div class="stepMid" id="m-dashW"></div>
-          <button class="stepBtn" data-act="plus">＋</button>
-        </div>
-      </div>
-
-      <div class="actions">
-        <button class="btn" id="copyBtn">COPY</button>
-        <button class="btn" id="resetBtn">RESET</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="toast" id="toast">コピーした</div>
 
   <script>
-    const root = document.documentElement;
-    const panelBody = document.getElementById("panelBody");
-    const toggleBtn = document.getElementById("toggleBtn");
-    const toast = document.getElementById("toast");
-    const KEY = "goja_square_stepper_v1";
-
-    const DEFAULT = {
-      titleY: 0,
-      numY: 0,
-      dashY: 0,
-      statusY: 0,
-      titleSize: 22,
-      numSize: 92,
-      statusSize: 20,
-      dashW: 220
-    };
-
-    const state = { ...DEFAULT };
-
-    function showToast(msg){
-      toast.textContent = msg;
-      toast.style.display = "block";
-      clearTimeout(showToast._t);
-      showToast._t = setTimeout(()=>toast.style.display="none", 1100);
+    // ===== 時刻表示 =====
+    function stampNow(){
+      const d = new Date();
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth()+1).padStart(2,"0");
+      const dd = String(d.getDate()).padStart(2,"0");
+      const hh = String(d.getHours()).padStart(2,"0");
+      const mi = String(d.getMinutes()).padStart(2,"0");
+      const ss = String(d.getSeconds()).padStart(2,"0");
+      document.getElementById("stamp").textContent = `${yyyy}.${mm}.${dd}  ${hh}:${mi}:${ss}`;
     }
+    setInterval(stampNow, 500);
+    stampNow();
+
+    // ===== UI確認用デモ（ゆっくり変動） =====
+    // 後でAPIに差し替えるための形
+    const DEMO = true;
+
+    // 変動が速すぎるの嫌、って言ってたから「ゆっくり」「小刻み」なランダムウォークにしてる
+    const state = {
+      cpuTemp: 58,
+      cpuUsage: 42,
+      memUsage: 60,
+      up: 18,
+      down: 92,
+      sdUsed: 31, sdTotal: 64,
+      hddUsed: 120, hddTotal: 1000,
+      denpo: true,
+      cloud: true
+    };
 
     function clamp(v, min, max){ return Math.max(min, Math.min(max, v)); }
 
-    function apply(){
-      root.style.setProperty("--titleY", state.titleY + "px");
-      root.style.setProperty("--numY", state.numY + "px");
-      root.style.setProperty("--dashY", state.dashY + "px");
-      root.style.setProperty("--statusY", state.statusY + "px");
-
-      root.style.setProperty("--titleSize", state.titleSize + "px");
-      root.style.setProperty("--numSize", state.numSize + "px");
-      root.style.setProperty("--statusSize", state.statusSize + "px");
-
-      root.style.setProperty("--dashW", state.dashW + "px");
-
-      // UI表示更新
-      for (const k of Object.keys(state)){
-        const v = state[k];
-        const vEl = document.getElementById("v-" + k);
-        const mEl = document.getElementById("m-" + k);
-        if(vEl) vEl.textContent = v + (k.includes("Size") || k.endsWith("Y") || k==="dashW" ? "px" : "");
-        if(mEl) mEl.textContent = v + (k.includes("Size") || k.endsWith("Y") || k==="dashW" ? "px" : "");
-      }
-
-      // save
-      localStorage.setItem(KEY, JSON.stringify(state));
+    function walk(v, step, min, max){
+      const r = (Math.random() - 0.5) * step * 2; // [-step, +step]
+      return clamp(v + r, min, max);
     }
 
-    function load(){
-      try{
-        const raw = localStorage.getItem(KEY);
-        if(!raw) return;
-        const d = JSON.parse(raw);
-        for(const k of Object.keys(DEFAULT)){
-          if(d[k] !== undefined) state[k] = Number(d[k]);
-        }
-      }catch(e){}
+    function levelStatus(pct){
+      if(pct < 70) return "稼働状態：通常";
+      if(pct < 85) return "稼働状態：注意";
+      return "稼働状態：警戒";
     }
 
-    function reset(){
-      Object.assign(state, DEFAULT);
-      apply();
-      showToast("リセットした");
+    function setNum(id, v){
+      const el = document.getElementById(id);
+      if(!el) return;
+      el.style.transform = "scale(1.01)";
+      el.textContent = String(Math.round(v));
+      setTimeout(()=>{ el.style.transform = "scale(1)"; }, 180);
     }
 
-    async function copy(){
-      const text =
-`GOJA TUNER 値（これを俺に送れ）
-titleY=${state.titleY}
-numY=${state.numY}
-dashY=${state.dashY}
-statusY=${state.statusY}
-titleSize=${state.titleSize}
-numSize=${state.numSize}
-statusSize=${state.statusSize}
-dashW=${state.dashW}`;
+    function updateUI(){
+      setNum("cpuTemp", state.cpuTemp);
+      document.getElementById("cpuTempStatus").textContent =
+        (state.cpuTemp < 70) ? "稼働状態：通常" : (state.cpuTemp < 80 ? "稼働状態：注意" : "稼働状態：警戒");
 
-      try{
-        await navigator.clipboard.writeText(text);
-        showToast("コピーした");
-      }catch(e){
-        prompt("これをコピーして送れ", text);
-      }
+      setNum("cpuUsage", state.cpuUsage);
+      document.getElementById("cpuUsageStatus").textContent = levelStatus(state.cpuUsage);
+
+      setNum("memUsage", state.memUsage);
+      document.getElementById("memUsageStatus").textContent = levelStatus(state.memUsage);
+
+      setNum("upSpeed", state.up);
+      setNum("downSpeed", state.down);
+
+      const now = new Date();
+      const t = `${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}:${String(now.getSeconds()).padStart(2,"0")}`;
+      document.getElementById("upStatus").textContent = `更新：${t}`;
+      document.getElementById("downStatus").textContent = `更新：${t}`;
+
+      setNum("sdUsed", state.sdUsed);
+      document.getElementById("sdUnit").textContent = `GB / ${state.sdTotal}GB`;
+      document.getElementById("sdStatus").textContent =
+        (state.sdUsed / state.sdTotal < 0.85) ? "稼働状態：通常" : "稼働状態：注意";
+
+      setNum("hddUsed", state.hddUsed);
+      document.getElementById("hddUnit").textContent = `GB / ${state.hddTotal}GB`;
+      document.getElementById("hddStatus").textContent =
+        (state.hddUsed / state.hddTotal < 0.85) ? "稼働状態：通常" : "稼働状態：注意";
+
+      document.getElementById("denpoStatus").textContent = state.denpo ? "稼働中..." : "停止中...";
+      document.getElementById("cloudStatus").textContent = state.cloud ? "稼働中..." : "停止中...";
     }
 
-    // Panel show/hide
-    function setPanel(open){
-      panelBody.style.display = open ? "block" : "none";
-      toggleBtn.textContent = open ? "HIDE" : "SHOW";
+    function tickDemo(){
+      // 温度：0.6℃刻みくらいでゆっくり
+      state.cpuTemp = walk(state.cpuTemp, 0.6, 40, 88);
+
+      // 稼働率：1〜2%刻み
+      state.cpuUsage = walk(state.cpuUsage, 1.4, 0, 100);
+      state.memUsage = walk(state.memUsage, 1.1, 0, 100);
+
+      // 通信速度：少しブレる
+      state.up = walk(state.up, 1.2, 0, 150);
+      state.down = walk(state.down, 2.0, 0, 300);
+
+      // 容量：基本はゆっくり増える（減ることもある程度）
+      state.sdUsed = clamp(state.sdUsed + (Math.random() < 0.60 ? 0.05 : -0.03), 0, state.sdTotal);
+      state.hddUsed = clamp(state.hddUsed + (Math.random() < 0.70 ? 0.18 : -0.10), 0, state.hddTotal);
+
+      updateUI();
     }
-    toggleBtn.addEventListener("click", ()=> setPanel(panelBody.style.display !== "block"));
 
-    document.getElementById("resetBtn").addEventListener("click", reset);
-    document.getElementById("copyBtn").addEventListener("click", copy);
-
-    // Stepper handlers（長押しで連打）
-    let holdTimer = null;
-    function startHold(fn){
-      fn();
-      holdTimer = setInterval(fn, 110);
+    // ===== ここをAPIに差し替える想定 =====
+    // 例：
+    // fetch("/api/metrics").then(r=>r.json()).then(data=>{ state=...; updateUI(); })
+    if(DEMO){
+      updateUI();
+      setInterval(tickDemo, 1200); // 速すぎない（1.2秒）
+    }else{
+      // TODO: 実データ取得
+      updateUI();
     }
-    function stopHold(){
-      if(holdTimer){ clearInterval(holdTimer); holdTimer = null; }
-    }
-    window.addEventListener("pointerup", stopHold);
-    window.addEventListener("pointercancel", stopHold);
-    window.addEventListener("blur", stopHold);
-
-    document.querySelectorAll(".row").forEach(row => {
-      const key = row.dataset.key;
-      const unit = row.dataset.unit;
-      const step = Number(row.dataset.step);
-      const min = Number(row.dataset.min);
-      const max = Number(row.dataset.max);
-
-      row.querySelectorAll(".stepBtn").forEach(btn => {
-        const act = btn.dataset.act;
-
-        const bump = () => {
-          const dir = (act === "plus") ? +1 : -1;
-          state[key] = clamp(state[key] + dir * step, min, max);
-          apply();
-        };
-
-        // クリック
-        btn.addEventListener("click", (e) => {
-          e.preventDefault();
-          bump();
-        });
-
-        // 長押し（pointerdown）
-        btn.addEventListener("pointerdown", (e) => {
-          e.preventDefault();
-          startHold(bump);
-        }, { passive:false });
-      });
-    });
-
-    // init
-    load();
-    apply();
-    setPanel(false);
-
-    // もし「まだ六角形が見える」なら、前のHTMLが残ってる可能性大。
-    // GitHub Pages/ブラウザで一度リロード（共有メニュー→“ページを再読み込み”）すると反映される。
   </script>
 </body>
 </html>
