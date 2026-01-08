@@ -6,21 +6,28 @@
   <title>GOJA UI Tuner (Single Hex)</title>
 
   <style>
-    /* ===== base ===== */
     :root{
       --bg: #000;
       --card: rgba(18,18,18,.92);
-      --stroke: #f2b100;          /* エヴァ寄りの黄 */
+      --stroke: #f2b100;
       --stroke2: rgba(242,177,0,.55);
       --text: #f2b100;
       --muted: rgba(242,177,0,.75);
-      --soft: rgba(255,255,255,.08);
 
-      /* ===== TUNING: 縦位置（ここだけ動かす） ===== */
+      /* 縦位置(px) */
       --y-title: 0px;
       --y-value: 0px;
       --y-dash:  0px;
       --y-status:0px;
+
+      /* 文字サイズ(px) */
+      --fs-title: 22px;
+      --fs-value: 96px;
+      --fs-unit:  20px;
+      --fs-status:16px;
+
+      /* 点線長さ(%) */
+      --dash-w: 62%;
     }
 
     html,body{
@@ -34,15 +41,12 @@
       display:flex;
       align-items:flex-start;
       justify-content:center;
-      padding: 18px 14px 140px; /* 下にチューナー分 */
+      padding: 18px 14px 280px;
       box-sizing: border-box;
     }
 
-    .wrap{
-      width: min(520px, 100%);
-    }
+    .wrap{ width: min(520px, 100%); }
 
-    /* ===== card ===== */
     .card{
       width: 100%;
       border-radius: 22px;
@@ -52,28 +56,21 @@
       box-sizing: border-box;
     }
 
-    /* ====== ここだけ修正：正六角形の比率 (W:H = 2:√3 = 1.154700...) ====== */
+    /* 正六角形比率 (W:H = 2:√3) */
     .hexStage{
       position: relative;
       width: 100%;
-      aspect-ratio: 1.1547005 / 1; /* ← 正六角形が潰れない */
+      aspect-ratio: 1.1547005 / 1;
       max-height: 360px;
       display:flex;
       align-items:center;
       justify-content:center;
     }
 
-    /* SVG（正六角形） */
-    svg.hex{
-      width: 100%;
-      height: 100%;
-      display:block;
-    }
-
+    svg.hex{ width: 100%; height: 100%; display:block; }
     .hexOuter{ stroke: var(--stroke); stroke-width: 3.6; fill: none; }
     .hexInner{ stroke: var(--stroke2); stroke-width: 2.2; fill: none; }
 
-    /* ===== content (触るのは縦位置だけ) ===== */
     .overlay{
       position:absolute;
       inset: 0;
@@ -84,21 +81,17 @@
       pointer-events:none;
     }
 
-    /* 題目：日本語は明朝太字寄せ */
     .metric-title{
       transform: translateY(var(--y-title));
-      font-family:
-        "Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",
-        "Times New Roman",serif;
+      font-family: "Hiragino Mincho ProN","Yu Mincho","Noto Serif JP","Times New Roman",serif;
       font-weight: 800;
       letter-spacing: .06em;
-      font-size: clamp(18px, 4.2vw, 26px);
+      font-size: var(--fs-title);
       color: var(--text);
       text-shadow: 0 0 18px rgba(242,177,0,.12);
       margin-bottom: 10px;
     }
 
-    /* 数字：デジタル寄せ */
     .metric-value{
       transform: translateY(var(--y-value));
       display:flex;
@@ -110,47 +103,39 @@
     }
 
     .metric-value .val{
-      font-family:
-        "DS-Digital","Digital-7","Orbitron","Share Tech Mono",
-        ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-family: "DS-Digital","Digital-7","Orbitron","Share Tech Mono",ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
       font-weight: 700;
-      font-size: clamp(72px, 16vw, 120px);
+      font-size: var(--fs-value);
       line-height: 1;
     }
 
     .metric-value .unit{
-      font-family:
-        "DS-Digital","Digital-7","Orbitron","Share Tech Mono",
-        ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-family: "DS-Digital","Digital-7","Orbitron","Share Tech Mono",ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
       font-weight: 600;
-      font-size: clamp(16px, 4.2vw, 24px);
+      font-size: var(--fs-unit);
       opacity: .7;
       transform: translateY(6px);
     }
 
-    /* 点線：短めに */
     .metric-dash{
       transform: translateY(var(--y-dash));
-      width: 62%;
+      width: var(--dash-w);
       border-bottom: 3px dashed rgba(242,177,0,.45);
       margin-top: 16px;
       margin-bottom: 14px;
     }
 
-    /* 稼働状態 */
     .metric-status{
       transform: translateY(var(--y-status));
-      font-family:
-        "Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",
-        "Times New Roman",serif;
+      font-family: "Hiragino Mincho ProN","Yu Mincho","Noto Serif JP","Times New Roman",serif;
       font-weight: 800;
       letter-spacing: .08em;
-      font-size: clamp(14px, 3.6vw, 20px);
+      font-size: var(--fs-status);
       color: var(--muted);
       margin-top: 4px;
     }
 
-    /* ===== tuner UI ===== */
+    /* tuner */
     #tuner{
       position: fixed;
       left: 10px; right: 10px; bottom: 10px;
@@ -164,21 +149,22 @@
       backdrop-filter: blur(8px);
     }
     #tuner.hidden{ display:none; }
+
+    .tunerHead{
+      display:flex; align-items:center; justify-content:space-between;
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+
     #tuner label{
       display:block;
       margin: 10px 0;
       font-size: 12px;
       opacity: .95;
     }
-    #tuner input[type="range"]{
-      width: 100%;
-      margin-top: 6px;
-    }
-    .tunerHead{
-      display:flex; align-items:center; justify-content:space-between;
-      margin-bottom: 6px;
-      font-size: 13px;
-    }
+
+    #tuner input[type="range"]{ width: 100%; margin-top: 6px; }
+
     .tunerHead button, .tunerBtns button{
       border: 1px solid rgba(255,255,255,.2);
       background: rgba(255,255,255,.08);
@@ -187,15 +173,49 @@
       border-radius: 12px;
       font-size: 12px;
     }
+
     .tunerBtns{
       display:flex; gap:10px;
-      margin-top: 8px;
+      margin-top: 10px;
     }
     .tunerBtns button{ flex:1; }
 
+    /* 追加：あなたのメモ欄（分かりやすい位置＝一番上） */
+    .memoBox{
+      border: 1px solid rgba(255,255,255,.14);
+      border-radius: 12px;
+      padding: 10px;
+      background: rgba(255,255,255,.04);
+      margin-bottom: 10px;
+    }
+    .memoBox .memoTitle{
+      font-size: 12px;
+      opacity: .95;
+      margin-bottom: 6px;
+    }
+    .memoBox textarea{
+      width: 100%;
+      box-sizing: border-box;
+      min-height: 54px;
+      resize: vertical;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(0,0,0,.35);
+      color: #fff;
+      padding: 8px 10px;
+      font-size: 12px;
+      line-height: 1.35;
+      outline: none;
+    }
+    .memoBox .hint{
+      margin-top: 6px;
+      font-size: 11px;
+      opacity: .7;
+    }
+
     @supports(padding: max(0px)){
       #tuner{ bottom: max(10px, env(safe-area-inset-bottom)); }
-      body{ padding-bottom: calc(140px + env(safe-area-inset-bottom)); }
+      body{ padding-bottom: calc(280px + env(safe-area-inset-bottom)); }
     }
   </style>
 </head>
@@ -204,46 +224,20 @@
   <div class="wrap">
     <div class="card">
       <div class="hexStage">
-        <!-- ====== ここだけ修正：数学的に正しい「正六角形」 ======
-             viewBoxは幅200、高さは 100*√3 = 173.205...
-             これで「潰れない正六角形」になる
-        -->
         <svg class="hex" viewBox="0 0 200 173.205" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-          <!-- 外枠（R=100, center=(100,86.6025)） -->
           <polygon class="hexOuter"
-            points="
-              200,86.602
-              150,173.205
-              50,173.205
-              0,86.602
-              50,0
-              150,0
-            ">
-          </polygon>
-
-          <!-- 内枠（R=82, 同中心） -->
+            points="200,86.602 150,173.205 50,173.205 0,86.602 50,0 150,0"></polygon>
           <polygon class="hexInner"
-            points="
-              182,86.602
-              141,157.660
-              59,157.660
-              18,86.602
-              59,15.545
-              141,15.545
-            ">
-          </polygon>
+            points="182,86.602 141,157.660 59,157.660 18,86.602 59,15.545 141,15.545"></polygon>
         </svg>
 
         <div class="overlay">
           <div class="metric-title">メモリ稼働率</div>
-
           <div class="metric-value">
             <span class="val">60</span>
             <span class="unit">%</span>
           </div>
-
           <div class="metric-dash"></div>
-
           <div class="metric-status">稼働状態：通常</div>
         </div>
       </div>
@@ -252,108 +246,181 @@
 
   <div id="tuner">
     <div class="tunerHead">
-      <div>位置調整（縦だけ）</div>
+      <div>位置調整（縦）＋サイズ＋点線</div>
       <button id="tunerToggle" type="button">HIDE</button>
     </div>
 
-    <label>題目Y <span id="vTitle">0</span>px
-      <input id="sTitle" type="range" min="-120" max="120" value="0">
+    <!-- ★追加：あなた→俺に渡す言葉（常に上で見える） -->
+    <div class="memoBox">
+      <div class="memoTitle">あなたが俺に伝えるメモ（そのまま貼ってOK）</div>
+      <textarea id="memo" placeholder="例）題目はもう少し下、数字はもう少し大きく、点線は短く… みたいな指示を書いてCOPYでまとめて送って。"></textarea>
+      <div class="hint">COPYで「メモ＋各スライダー値」が一括でコピーされる。</div>
+    </div>
+
+    <!-- ===== Y sliders ===== -->
+    <label>題目Y <span id="vTitleY">0</span>px
+      <input id="sTitleY" type="range" min="-140" max="140" value="0">
     </label>
 
-    <label>数字Y <span id="vValue">0</span>px
-      <input id="sValue" type="range" min="-160" max="160" value="0">
+    <label>数字Y <span id="vValueY">0</span>px
+      <input id="sValueY" type="range" min="-180" max="180" value="0">
     </label>
 
-    <label>点線Y <span id="vDash">0</span>px
-      <input id="sDash" type="range" min="-160" max="160" value="0">
+    <label>点線Y <span id="vDashY">0</span>px
+      <input id="sDashY" type="range" min="-180" max="180" value="0">
     </label>
 
-    <label>稼働状態Y <span id="vStatus">0</span>px
-      <input id="sStatus" type="range" min="-160" max="160" value="0">
+    <label>稼働状態Y <span id="vStatusY">0</span>px
+      <input id="sStatusY" type="range" min="-180" max="180" value="0">
+    </label>
+
+    <!-- ===== Size sliders ===== -->
+    <label>題目サイズ <span id="vTitleFS">22</span>px
+      <input id="sTitleFS" type="range" min="12" max="44" value="22">
+    </label>
+
+    <label>数字サイズ <span id="vValueFS">96</span>px
+      <input id="sValueFS" type="range" min="36" max="140" value="96">
+    </label>
+
+    <label>単位サイズ <span id="vUnitFS">20</span>px
+      <input id="sUnitFS" type="range" min="10" max="40" value="20">
+    </label>
+
+    <label>稼働状態サイズ <span id="vStatusFS">16</span>px
+      <input id="sStatusFS" type="range" min="10" max="32" value="16">
+    </label>
+
+    <!-- ===== Dash length ===== -->
+    <label>点線の長さ <span id="vDashW">62</span>%
+      <input id="sDashW" type="range" min="20" max="95" value="62">
     </label>
 
     <div class="tunerBtns">
-      <button id="copyPos" type="button">COPY</button>
-      <button id="resetPos" type="button">RESET</button>
+      <button id="copyBtn" type="button">COPY</button>
+      <button id="resetBtn" type="button">RESET</button>
     </div>
   </div>
 
   <script>
-  (() => {
-    const keys = ["title","value","dash","status"];
-    const $ = (id) => document.getElementById(id);
+    const root = document.documentElement;
 
-    const sliders = {
-      title: $("sTitle"),
-      value: $("sValue"),
-      dash:  $("sDash"),
-      status:$("sStatus"),
-    };
-    const labels = {
-      title: $("vTitle"),
-      value: $("vValue"),
-      dash:  $("vDash"),
-      status:$("vStatus"),
-    };
+    // sliders
+    const sTitleY  = document.getElementById('sTitleY');
+    const sValueY  = document.getElementById('sValueY');
+    const sDashY   = document.getElementById('sDashY');
+    const sStatusY = document.getElementById('sStatusY');
 
-    const saved = JSON.parse(localStorage.getItem("goja_pos") || "{}");
-    keys.forEach(k => {
-      const v = (saved[k] ?? 0);
-      sliders[k].value = v;
-      labels[k].textContent = v;
-      document.documentElement.style.setProperty(`--y-${k}`, `${v}px`);
+    const sTitleFS  = document.getElementById('sTitleFS');
+    const sValueFS  = document.getElementById('sValueFS');
+    const sUnitFS   = document.getElementById('sUnitFS');
+    const sStatusFS = document.getElementById('sStatusFS');
+
+    const sDashW = document.getElementById('sDashW');
+
+    // value labels
+    const vTitleY  = document.getElementById('vTitleY');
+    const vValueY  = document.getElementById('vValueY');
+    const vDashY   = document.getElementById('vDashY');
+    const vStatusY = document.getElementById('vStatusY');
+
+    const vTitleFS  = document.getElementById('vTitleFS');
+    const vValueFS  = document.getElementById('vValueFS');
+    const vUnitFS   = document.getElementById('vUnitFS');
+    const vStatusFS = document.getElementById('vStatusFS');
+
+    const vDashW = document.getElementById('vDashW');
+
+    const memo = document.getElementById('memo');
+
+    function apply(){
+      root.style.setProperty('--y-title',  sTitleY.value  + 'px');
+      root.style.setProperty('--y-value',  sValueY.value  + 'px');
+      root.style.setProperty('--y-dash',   sDashY.value   + 'px');
+      root.style.setProperty('--y-status', sStatusY.value + 'px');
+
+      root.style.setProperty('--fs-title',  sTitleFS.value  + 'px');
+      root.style.setProperty('--fs-value',  sValueFS.value  + 'px');
+      root.style.setProperty('--fs-unit',   sUnitFS.value   + 'px');
+      root.style.setProperty('--fs-status', sStatusFS.value + 'px');
+
+      root.style.setProperty('--dash-w', sDashW.value + '%');
+
+      vTitleY.textContent  = sTitleY.value;
+      vValueY.textContent  = sValueY.value;
+      vDashY.textContent   = sDashY.value;
+      vStatusY.textContent = sStatusY.value;
+
+      vTitleFS.textContent  = sTitleFS.value;
+      vValueFS.textContent  = sValueFS.value;
+      vUnitFS.textContent   = sUnitFS.value;
+      vStatusFS.textContent = sStatusFS.value;
+
+      vDashW.textContent = sDashW.value;
+    }
+
+    [
+      sTitleY,sValueY,sDashY,sStatusY,
+      sTitleFS,sValueFS,sUnitFS,sStatusFS,
+      sDashW
+    ].forEach(el => el.addEventListener('input', apply));
+
+    apply();
+
+    // toggle
+    const tuner = document.getElementById('tuner');
+    const toggleBtn = document.getElementById('tunerToggle');
+    toggleBtn.addEventListener('click', ()=>{
+      tuner.classList.toggle('hidden');
     });
 
-    keys.forEach(k => {
-      sliders[k].addEventListener("input", () => {
-        const v = parseInt(sliders[k].value, 10) || 0;
-        labels[k].textContent = v;
-        document.documentElement.style.setProperty(`--y-${k}`, `${v}px`);
+    // copy
+    document.getElementById('copyBtn').addEventListener('click', async ()=>{
+      const out =
+`【GOJA UI 調整値】
+メモ:
+${memo.value.trim() || "(空)"}
 
-        const cur = JSON.parse(localStorage.getItem("goja_pos") || "{}");
-        cur[k] = v;
-        localStorage.setItem("goja_pos", JSON.stringify(cur));
-      });
-    });
+Y(px)
+- 題目Y: ${sTitleY.value}
+- 数字Y: ${sValueY.value}
+- 点線Y: ${sDashY.value}
+- 稼働状態Y: ${sStatusY.value}
 
-    $("tunerToggle").addEventListener("click", () => {
-      const t = $("tuner");
-      if (t.classList.contains("hidden")) {
-        t.classList.remove("hidden");
-        $("tunerToggle").textContent = "HIDE";
-      } else {
-        t.classList.add("hidden");
-        $("tunerToggle").textContent = "SHOW";
-      }
-    });
+SIZE(px)
+- 題目: ${sTitleFS.value}
+- 数字: ${sValueFS.value}
+- 単位: ${sUnitFS.value}
+- 稼働状態: ${sStatusFS.value}
 
-    $("copyPos").addEventListener("click", async () => {
-      const cur = JSON.parse(localStorage.getItem("goja_pos") || "{}");
-      const text = JSON.stringify({
-        y_title:  cur.title ?? 0,
-        y_value:  cur.value ?? 0,
-        y_dash:   cur.dash  ?? 0,
-        y_status: cur.status?? 0,
-      }, null, 2);
+DASH(%)
+- 点線長さ: ${sDashW.value}
+
+（このまま俺に貼れ）`;
 
       try{
-        await navigator.clipboard.writeText(text);
-        $("copyPos").textContent = "COPIED";
-        setTimeout(()=> $("copyPos").textContent="COPY", 900);
+        await navigator.clipboard.writeText(out);
+        alert("コピーした。俺に貼れ。");
       }catch(e){
-        alert(text);
+        // fallback
+        const ta = document.createElement('textarea');
+        ta.value = out;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        ta.remove();
+        alert("コピーした（fallback）。俺に貼れ。");
       }
     });
 
-    $("resetPos").addEventListener("click", () => {
-      localStorage.removeItem("goja_pos");
-      keys.forEach(k => {
-        sliders[k].value = 0;
-        labels[k].textContent = 0;
-        document.documentElement.style.setProperty(`--y-${k}`, `0px`);
-      });
+    // reset
+    document.getElementById('resetBtn').addEventListener('click', ()=>{
+      sTitleY.value=0; sValueY.value=0; sDashY.value=0; sStatusY.value=0;
+      sTitleFS.value=22; sValueFS.value=96; sUnitFS.value=20; sStatusFS.value=16;
+      sDashW.value=62;
+      memo.value="";
+      apply();
     });
-  })();
   </script>
 </body>
 </html>
