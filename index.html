@@ -3,402 +3,759 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>GOJA NERV MONITOR</title>
+  <title>GOJA NERV MONITOR (TUNER)</title>
 
-  <!-- Fonts -->
+  <!-- Fonts (任意：GitHub Pagesなら読める) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800&family=Noto+Serif+JP:wght@700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Noto+Serif+JP:wght@700;900&display=swap" rel="stylesheet">
 
   <style>
     :root{
-      --bg:#000;
-      --panel:#070707;
-      --gold:#f2b000;     /* エヴァ寄りの黄 */
-      --gold2:#a97700;
-      --txt:#e8e8e8;
-
-      /* ===== 固定サイズ(ここが肝) ===== */
-      --deviceW: 390px;   /* 君のiPhoneに合わせる想定：横幅は固定。 */
-      --card: 360px;      /* 正方形カード(固定) */
-      --pad: 14px;
-
-      /* ===== GOJA TUNER 値（君が送ってくれたやつ） ===== */
+      /* ===== GOJA TUNER (共通) ===== */
       --titleY: 19px;
       --numY: 4px;
+      --unitY: 0px;
       --dashY: -2px;
       --statusY: -10px;
 
       --titleSize: 33px;
       --numSize: 112px;
+      --unitSize: 26px;
       --statusSize: 28px;
 
       --dashW: 220px;
+
+      /* ===== 追加TUNER ===== */
+      --cardSize: 340px;      /* 正方形 */
+      --cardGap: 22px;
+
+      /* ===== サーバーカード専用 ===== */
+      --serverBadgeY: 118px;
+      --serverLinesY: 132px;
+      --serverLinesSize: 28px;
+
+      /* ===== 通信速度サブタイトル ===== */
+      --netSubSize: 18px;
+      --netSubGap: 6px;
+
+      /* ===== 色/質感 ===== */
+      --bg: #000;
+      --gold: rgba(242,176,0,.95);
+      --gold2: rgba(242,176,0,.55);
+      --textDim: rgba(242,176,0,.78);
+      --whiteDim: rgba(220,220,220,.78);
+
+      --outerStroke: 10px;
+      --innerStroke: 4px;
+      --radius: 26px;
     }
 
     *{ box-sizing:border-box; }
+    html,body{ height:100%; }
     body{
       margin:0;
-      background:var(--bg);
-      color:var(--txt);
+      background: var(--bg);
+      color: var(--gold);
       -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
       overflow-x:hidden;
     }
 
-    /* ===== 画面は「固定幅」：勝手にフィットさせない ===== */
-    .wrap{
-      width: var(--deviceW);
-      margin: 0 auto;
-      padding: 18px 0 40px;
-    }
-
+    /* ===== Header ===== */
     .topbar{
-      padding: 10px 18px 14px;
+      padding: 18px 18px 8px;
       display:flex;
-      justify-content:space-between;
       align-items:flex-end;
+      justify-content:space-between;
       gap:12px;
     }
     .brand{
       line-height:1;
     }
-    .brand .title{
-      font-family:"Noto Serif JP", serif;
-      font-weight:900;
+    .brand .h1{
+      font-family: "Noto Serif JP", serif;
+      font-weight: 900;
       letter-spacing: .08em;
       font-size: 26px;
+      color: rgba(245,245,245,.9);
     }
-    .brand .sub{
-      margin-top:8px;
-      font-family:"Orbitron", system-ui, sans-serif;
-      letter-spacing:.22em;
-      font-size: 14px;
-      color: rgba(242,176,0,.85);
+    .brand .h2{
+      margin-top:6px;
+      font-family: "Orbitron", system-ui, sans-serif;
+      font-weight: 700;
+      letter-spacing: .22em;
+      font-size: 12px;
+      color: rgba(242,176,0,.65);
     }
     .clock{
-      font-family:"Orbitron", system-ui, sans-serif;
-      letter-spacing:.12em;
-      font-size: 14px;
-      color: rgba(232,232,232,.55);
-      padding-bottom: 2px;
+      font-family: "Orbitron", system-ui, sans-serif;
+      letter-spacing: .18em;
+      font-size: 12px;
+      color: rgba(220,220,220,.55);
       white-space:nowrap;
     }
 
-    .list{
+    /* ===== Layout ===== */
+    .wrap{
+      padding: 8px 14px 140px;
       display:flex;
       flex-direction:column;
-      gap: 16px;
-      padding: 0 18px;
+      align-items:center;
+      gap: var(--cardGap);
     }
 
-    /* ===== 正方形カード ===== */
+    /* ===== Card base ===== */
     .card{
-      width: var(--card);
-      height: var(--card);
-      background: #050505;
-      border-radius: 22px;
+      width: min(var(--cardSize), calc(100vw - 28px));
+      aspect-ratio: 1 / 1; /* 正方形固定 */
+      border-radius: var(--radius);
       position: relative;
-      overflow:hidden;
+      background: #000;
       box-shadow:
         0 0 0 1px rgba(255,255,255,.05),
-        0 14px 28px rgba(0,0,0,.55);
+        0 18px 45px rgba(0,0,0,.75);
+      overflow:hidden;
     }
 
-    /* 外枠(太) */
+    /* outer glow-ish frame */
     .card::before{
       content:"";
       position:absolute;
-      inset: 18px;
-      border: 6px solid rgba(242,176,0,.95);
-      border-radius: 18px;
+      inset: 0;
+      border-radius: var(--radius);
+      background:
+        radial-gradient(120% 140% at 50% 0%, rgba(255,255,255,.06), transparent 55%),
+        radial-gradient(120% 160% at 50% 120%, rgba(255,255,255,.05), transparent 60%);
       pointer-events:none;
-      filter: drop-shadow(0 0 6px rgba(242,176,0,.25));
     }
 
-    /* 内枠(細) */
-    .card::after{
+    .frame{
+      position:absolute;
+      inset: 18px;
+      border-radius: calc(var(--radius) - 10px);
+      border: var(--outerStroke) solid var(--gold);
+      box-shadow:
+        0 0 0 1px rgba(0,0,0,.7) inset,
+        0 0 24px rgba(242,176,0,.08);
+      pointer-events:none;
+    }
+    .frame::after{
       content:"";
       position:absolute;
-      inset: 36px;
-      border: 3px solid rgba(242,176,0,.45);
-      border-radius: 14px;
+      inset: 18px;
+      border-radius: calc(var(--radius) - 22px);
+      border: var(--innerStroke) solid var(--gold2);
       pointer-events:none;
     }
 
-    /* ===== 中のレイヤ ===== */
-    .inner{
-      position:absolute;
-      inset:0;
-      display:block;
-    }
-
+    /* ===== Common metric elements (absolute) ===== */
     .metric-title{
       position:absolute;
-      left:0; right:0;
-      top: calc(52px + var(--titleY));
+      left: 0;
+      right: 0;
+      top: calc(46px + var(--titleY));
       text-align:center;
-      font-family:"Noto Serif JP", serif;
-      font-weight:900;
-      letter-spacing: .08em;
+      font-family: "Noto Serif JP", serif;
+      font-weight: 900;
       font-size: var(--titleSize);
-      color: rgba(242,176,0,.92);
-      text-shadow: 0 0 10px rgba(242,176,0,.18);
-      white-space:nowrap;
+      letter-spacing: .08em;
+      color: rgba(242,176,0,.95);
+      text-shadow: 0 0 18px rgba(242,176,0,.08);
+      pointer-events:none;
     }
 
     .metric-num{
       position:absolute;
-      left:0; right:0;
-      top: calc(120px + var(--numY));
+      left: 0;
+      right: 0;
+      top: calc(130px + var(--numY));
       text-align:center;
-      font-family:"Orbitron", system-ui, sans-serif;
-      font-weight:800;
+      font-family: "Orbitron", system-ui, sans-serif;
+      font-weight: 900;
       font-size: var(--numSize);
-      letter-spacing: .03em;
-      color: rgba(242,176,0,.98);
-      line-height: 1;
-      text-shadow: 0 0 14px rgba(242,176,0,.18);
-      white-space:nowrap;
+      letter-spacing: .06em;
+      color: rgba(242,176,0,.95);
+      pointer-events:none;
     }
 
     .metric-unit{
       position:absolute;
-      top: calc(168px + var(--numY));
       left: 50%;
-      transform: translateX(calc(var(--dashW) * 0.0 + 92px)); /* 数字の右側に寄せる */
-      font-family:"Orbitron", system-ui, sans-serif;
-      font-size: 20px;
-      font-weight:700;
-      letter-spacing:.08em;
-      color: rgba(232,232,232,.70);
-      white-space:nowrap;
+      top: calc(190px + var(--numY) + var(--unitY));
+      transform: translateX(120px); /* 右側固定(数値サイズ想定) */
+      font-family: "Orbitron", system-ui, sans-serif;
+      font-weight: 700;
+      font-size: var(--unitSize);
+      letter-spacing: .06em;
+      color: rgba(220,220,220,.7);
+      pointer-events:none;
     }
 
     .dash{
       position:absolute;
-      left:50%;
-      top: calc(220px + var(--dashY));
+      left: 50%;
+      top: calc(230px + var(--dashY));
       transform: translateX(-50%);
       width: var(--dashW);
       height: 0;
-      border-top: 4px dashed rgba(242,176,0,.35);
-      filter: drop-shadow(0 0 2px rgba(242,176,0,.08));
+      border-top: 6px dashed rgba(242,176,0,.38);
+      pointer-events:none;
     }
 
     .status{
       position:absolute;
-      left:0; right:0;
-      top: calc(244px + var(--statusY));
+      left: 0;
+      right: 0;
+      top: calc(258px + var(--statusY));
       text-align:center;
-      font-family:"Noto Serif JP", serif;
-      font-weight:900;
-      letter-spacing:.12em;
+      font-family: "Noto Serif JP", serif;
+      font-weight: 900;
       font-size: var(--statusSize);
-      color: rgba(242,176,0,.82);
-      white-space:nowrap;
+      letter-spacing: .08em;
+      color: rgba(242,176,0,.85);
+      pointer-events:none;
     }
 
-    /* サーバーカード（電報/クラウド分ける） */
-    .server-lines{
-      position:absolute;
-      left:0; right:0;
-      top: calc(108px + var(--numY));
-      text-align:center;
+    /* ===== 通信速度：タイトル2行 ===== */
+    .card--net .metric-title{
+      line-height: 1.05;
+    }
+    .card--net .metric-title .sub{
+      display:block;
+      margin-top: var(--netSubGap);
       font-family:"Orbitron", system-ui, sans-serif;
-      font-weight:800;
-      color: rgba(232,232,232,.78);
-      letter-spacing:.18em;
-      line-height: 1.2;
+      font-size: var(--netSubSize);
+      font-weight: 700;
+      letter-spacing: .28em;
+      color: rgba(242,176,0,.72);
     }
-    .server-lines .l1{ font-size: 26px; }
-    .server-lines .l2{ font-size: 20px; margin-top:10px; color: rgba(232,232,232,.65); }
 
+    /* ===== サーバーカード ===== */
+    .card--server .metric-num,
+    .card--server .metric-unit{
+      display:none;
+    }
+    .card--server .metric-title{
+      top: calc(44px + var(--titleY));
+      font-size: calc(var(--titleSize) - 3px);
+    }
     .badge{
       position:absolute;
-      right: 44px;
-      top: 92px;
-      padding: 10px 14px;
+      right: 54px;
+      top: var(--serverBadgeY);
+      padding: 10px 22px;
       border-radius: 999px;
-      border: 2px solid rgba(242,176,0,.55);
-      color: rgba(242,176,0,.95);
+      border: 3px solid rgba(242,176,0,.45);
+      color: rgba(242,176,0,.92);
+      font-family:"Noto Serif JP", serif;
+      font-weight: 900;
+      font-size: 24px;
+      letter-spacing: .08em;
+      background: rgba(0,0,0,.25);
+      pointer-events:none;
+    }
+    .server-lines{
+      position:absolute;
+      left: 0;
+      right: 0;
+      top: calc(var(--serverLinesY) + var(--numY));
+      text-align:center;
+      font-family:"Orbitron", system-ui, sans-serif;
+      font-weight: 700;
+      font-size: var(--serverLinesSize);
+      letter-spacing: .18em;
+      color: rgba(220,220,220,.75);
+      pointer-events:none;
+    }
+    .server-lines .big{
+      display:block;
+      font-weight: 900;
+      letter-spacing: .24em;
+      color: rgba(220,220,220,.78);
+      margin-bottom: 10px;
+    }
+    .server-lines .small{
+      display:block;
+      color: rgba(220,220,220,.72);
+    }
+    .card--server .dash{
+      top: calc(240px + var(--dashY));
+      border-top-width: 6px;
+    }
+    .card--server .status{
+      top: calc(268px + var(--statusY));
+    }
+
+    /* ===== TUNER panel ===== */
+    .tunerDock{
+      position: fixed;
+      left: 14px;
+      right: 14px;
+      bottom: 18px;
+      z-index: 999;
+      display:flex;
+      justify-content:center;
+      pointer-events:none; /* ボタン以外は透過 */
+    }
+    .tunerBar{
+      width: min(720px, 100%);
+      border-radius: 999px;
+      background: rgba(20,20,20,.45);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,.08);
+      padding: 10px 12px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      pointer-events:auto;
+    }
+    .tunerBar .label{
+      font-family:"Noto Serif JP", serif;
+      font-weight: 900;
+      letter-spacing:.08em;
+      color: rgba(230,230,230,.85);
+      font-size: 14px;
+      padding-left: 6px;
+      white-space:nowrap;
+    }
+    .tunerBar button{
+      border:0;
+      border-radius: 999px;
+      padding: 10px 16px;
+      font-family:"Orbitron", system-ui, sans-serif;
+      font-weight: 700;
+      letter-spacing:.12em;
+      background: rgba(255,255,255,.08);
+      color: rgba(240,240,240,.9);
+    }
+    .tunerBar button:active{ transform: scale(.98); }
+
+    .panel{
+      position: fixed;
+      left: 14px;
+      right: 14px;
+      bottom: 70px;
+      z-index: 999;
+      border-radius: 18px;
+      background: rgba(0,0,0,.25);        /* スケスケ */
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,.10);
+      padding: 14px 14px 10px;
+      max-height: 44vh;                   /* iPhoneでスクロール可 */
+      overflow:auto;
+      -webkit-overflow-scrolling: touch;
+      display:none;
+    }
+
+    .panel h3{
+      margin: 0 0 10px 0;
+      font-family:"Orbitron", system-ui, sans-serif;
+      font-weight:700;
+      letter-spacing:.18em;
+      font-size: 12px;
+      color: rgba(220,220,220,.70);
+    }
+
+    .row{
+      display:grid;
+      grid-template-columns: 1fr auto;
+      align-items:center;
+      gap: 10px;
+      padding: 10px 6px;
+      border-top: 1px solid rgba(255,255,255,.06);
+    }
+    .row:first-of-type{ border-top: 0; }
+    .row .name{
       font-family:"Noto Serif JP", serif;
       font-weight:900;
-      letter-spacing:.18em;
-      font-size: 18px;
-      background: rgba(0,0,0,.35);
-      white-space:nowrap;
+      letter-spacing:.06em;
+      color: rgba(240,240,240,.86);
+      font-size: 14px;
+    }
+    .row .val{
+      font-family:"Orbitron", system-ui, sans-serif;
+      font-weight:700;
+      letter-spacing:.10em;
+      color: rgba(242,176,0,.85);
+      font-size: 12px;
+      min-width: 72px;
+      text-align:right;
+    }
+
+    input[type="range"]{
+      width: 100%;
+      accent-color: rgba(242,176,0,.9);
+    }
+
+    .btns{
+      display:flex;
+      gap:10px;
+      padding: 10px 6px 6px;
+      border-top: 1px solid rgba(255,255,255,.06);
+    }
+    .btns button{
+      flex:1;
+      border:0;
+      border-radius: 12px;
+      padding: 12px 12px;
+      background: rgba(255,255,255,.08);
+      color: rgba(240,240,240,.9);
+      font-family:"Orbitron", system-ui, sans-serif;
+      font-weight:700;
+      letter-spacing:.12em;
+    }
+    .btns button:active{ transform: scale(.99); }
+
+    .hint{
+      padding: 8px 6px 2px;
+      font-family:"Noto Serif JP", serif;
+      font-weight: 900;
+      letter-spacing:.06em;
+      color: rgba(242,176,0,.78);
+      font-size: 12px;
+      opacity: .9;
     }
   </style>
 </head>
 
 <body>
+  <div class="topbar">
+    <div class="brand">
+      <div class="h1">KAZ-RASPI</div>
+      <div class="h2">GOJA NERV MONITOR</div>
+    </div>
+    <div class="clock" id="clock">----</div>
+  </div>
+
   <div class="wrap">
-    <div class="topbar">
-      <div class="brand">
-        <div class="title">KAZ-RASPI</div>
-        <div class="sub">GOJA NERV MONITOR</div>
-      </div>
-      <div class="clock" id="clock">----</div>
+    <!-- CPU温度 -->
+    <div class="card">
+      <div class="frame"></div>
+      <div class="metric-title">CPU温度</div>
+      <div class="metric-num" id="cpuTemp">58</div>
+      <div class="metric-unit">°C</div>
+      <div class="dash"></div>
+      <div class="status">稼働状態：通常</div>
     </div>
 
-    <div class="list" id="list">
-      <!-- CPU TEMP -->
-      <div class="card">
-        <div class="inner">
-          <div class="metric-title">CPU温度</div>
-          <div class="metric-num" id="cpuTemp">58</div>
-          <div class="metric-unit">℃</div>
-          <div class="dash"></div>
-          <div class="status" id="cpuTempSt">稼働状態：通常</div>
-        </div>
-      </div>
+    <!-- CPU稼働率 -->
+    <div class="card">
+      <div class="frame"></div>
+      <div class="metric-title">CPU稼働率</div>
+      <div class="metric-num" id="cpuUse">41</div>
+      <div class="metric-unit">%</div>
+      <div class="dash"></div>
+      <div class="status">稼働状態：通常</div>
+    </div>
 
-      <!-- CPU USAGE -->
-      <div class="card">
-        <div class="inner">
-          <div class="metric-title">CPU稼働率</div>
-          <div class="metric-num" id="cpuUse">41</div>
-          <div class="metric-unit">%</div>
-          <div class="dash"></div>
-          <div class="status" id="cpuUseSt">稼働状態：通常</div>
-        </div>
-      </div>
+    <!-- メモリ稼働率 -->
+    <div class="card">
+      <div class="frame"></div>
+      <div class="metric-title">メモリ稼働率</div>
+      <div class="metric-num" id="memUse">59</div>
+      <div class="metric-unit">%</div>
+      <div class="dash"></div>
+      <div class="status">稼働状態：通常</div>
+    </div>
 
-      <!-- MEM USAGE -->
-      <div class="card">
-        <div class="inner">
-          <div class="metric-title">メモリ稼働率</div>
-          <div class="metric-num" id="memUse">59</div>
-          <div class="metric-unit">%</div>
-          <div class="dash"></div>
-          <div class="status" id="memUseSt">稼働状態：通常</div>
-        </div>
-      </div>
+    <!-- 通信速度 DOWNLOAD -->
+    <div class="card card--net">
+      <div class="frame"></div>
+      <div class="metric-title">通信速度<span class="sub">DOWNLOAD</span></div>
+      <div class="metric-num" id="down">121</div>
+      <div class="metric-unit">Mbps</div>
+      <div class="dash"></div>
+      <div class="status">稼働状態：通常</div>
+    </div>
 
-      <!-- UPLOAD -->
-      <div class="card">
-        <div class="inner">
-          <div class="metric-title">通信速度《UPLOAD》</div>
-          <div class="metric-num" id="up">46</div>
-          <div class="metric-unit">Mbps</div>
-          <div class="dash"></div>
-          <div class="status" id="upSt">稼働状態：通常</div>
-        </div>
-      </div>
+    <!-- 通信速度 UPLOAD -->
+    <div class="card card--net">
+      <div class="frame"></div>
+      <div class="metric-title">通信速度<span class="sub">UPLOAD</span></div>
+      <div class="metric-num" id="up">35</div>
+      <div class="metric-unit">Mbps</div>
+      <div class="dash"></div>
+      <div class="status">稼働状態：通常</div>
+    </div>
 
-      <!-- DOWNLOAD -->
-      <div class="card">
-        <div class="inner">
-          <div class="metric-title">通信速度《DOWNLOAD》</div>
-          <div class="metric-num" id="down">121</div>
-          <div class="metric-unit">Mbps</div>
-          <div class="dash"></div>
-          <div class="status" id="downSt">稼働状態：通常</div>
-        </div>
+    <!-- サーバー稼働状況：DENPO -->
+    <div class="card card--server">
+      <div class="frame"></div>
+      <div class="metric-title">サーバー稼働状況</div>
+      <div class="badge">稼働中</div>
+      <div class="server-lines">
+        <span class="big">GOJA</span>
+        <span class="small">DENPO-SERVER</span>
       </div>
+      <div class="dash"></div>
+      <div class="status">稼働状態：通常</div>
+    </div>
 
-      <!-- DENPO SERVER -->
-      <div class="card">
-        <div class="inner">
-          <div class="metric-title">サーバー稼働状況</div>
-          <div class="server-lines">
-            <div class="l1">GOJA</div>
-            <div class="l2">DENPO-SERVER</div>
-          </div>
-          <div class="badge" id="denpoBadge">稼働中</div>
-          <div class="dash"></div>
-          <div class="status" id="denpoSt">稼働状態：通常</div>
-        </div>
+    <!-- サーバー稼働状況：CLOUD -->
+    <div class="card card--server">
+      <div class="frame"></div>
+      <div class="metric-title">サーバー稼働状況</div>
+      <div class="badge">稼働中</div>
+      <div class="server-lines">
+        <span class="big">GOJA</span>
+        <span class="small">CLOUD-SERVER</span>
       </div>
+      <div class="dash"></div>
+      <div class="status">稼働状態：通常</div>
+    </div>
+  </div>
 
-      <!-- CLOUD SERVER -->
-      <div class="card">
-        <div class="inner">
-          <div class="metric-title">サーバー稼働状況</div>
-          <div class="server-lines">
-            <div class="l1">GOJA</div>
-            <div class="l2">CLOUD-SERVER</div>
-          </div>
-          <div class="badge" id="cloudBadge">稼働中</div>
-          <div class="dash"></div>
-          <div class="status" id="cloudSt">稼働状態：通常</div>
-        </div>
+  <!-- TUNER -->
+  <div class="panel" id="panel">
+    <div class="hint">※ 全カード共通で動く（今は「調整用」）</div>
+
+    <h3>COMMON (位置)</h3>
+    <div class="row">
+      <div>
+        <div class="name">題目Y</div>
+        <input type="range" id="titleY" min="-60" max="60" step="1">
       </div>
+      <div class="val" id="v_titleY"></div>
+    </div>
+    <div class="row">
+      <div>
+        <div class="name">数字Y</div>
+        <input type="range" id="numY" min="-80" max="80" step="1">
+      </div>
+      <div class="val" id="v_numY"></div>
+    </div>
+    <div class="row">
+      <div>
+        <div class="name">単位Y</div>
+        <input type="range" id="unitY" min="-80" max="80" step="1">
+      </div>
+      <div class="val" id="v_unitY"></div>
+    </div>
+    <div class="row">
+      <div>
+        <div class="name">点線Y</div>
+        <input type="range" id="dashY" min="-120" max="120" step="1">
+      </div>
+      <div class="val" id="v_dashY"></div>
+    </div>
+    <div class="row">
+      <div>
+        <div class="name">稼働状態Y</div>
+        <input type="range" id="statusY" min="-120" max="120" step="1">
+      </div>
+      <div class="val" id="v_statusY"></div>
+    </div>
+
+    <h3>COMMON (サイズ)</h3>
+    <div class="row">
+      <div>
+        <div class="name">題目サイズ</div>
+        <input type="range" id="titleSize" min="14" max="48" step="1">
+      </div>
+      <div class="val" id="v_titleSize"></div>
+    </div>
+    <div class="row">
+      <div>
+        <div class="name">数字サイズ</div>
+        <input type="range" id="numSize" min="40" max="160" step="1">
+      </div>
+      <div class="val" id="v_numSize"></div>
+    </div>
+    <div class="row">
+      <div>
+        <div class="name">単位サイズ</div>
+        <input type="range" id="unitSize" min="10" max="44" step="1">
+      </div>
+      <div class="val" id="v_unitSize"></div>
+    </div>
+    <div class="row">
+      <div>
+        <div class="name">稼働状態サイズ</div>
+        <input type="range" id="statusSize" min="12" max="44" step="1">
+      </div>
+      <div class="val" id="v_statusSize"></div>
+    </div>
+
+    <h3>COMMON (点線/カード)</h3>
+    <div class="row">
+      <div>
+        <div class="name">点線長さ</div>
+        <input type="range" id="dashW" min="80" max="320" step="1">
+      </div>
+      <div class="val" id="v_dashW"></div>
+    </div>
+    <div class="row">
+      <div>
+        <div class="name">カードサイズ（正方形）</div>
+        <input type="range" id="cardSize" min="260" max="380" step="1">
+      </div>
+      <div class="val" id="v_cardSize"></div>
+    </div>
+    <div class="row">
+      <div>
+        <div class="name">カード間隔</div>
+        <input type="range" id="cardGap" min="10" max="40" step="1">
+      </div>
+      <div class="val" id="v_cardGap"></div>
+    </div>
+
+    <h3>SERVER (被り対策)</h3>
+    <div class="row">
+      <div>
+        <div class="name">稼働中バッジY</div>
+        <input type="range" id="serverBadgeY" min="60" max="220" step="1">
+      </div>
+      <div class="val" id="v_serverBadgeY"></div>
+    </div>
+    <div class="row">
+      <div>
+        <div class="name">GOJA/DENPO行Y</div>
+        <input type="range" id="serverLinesY" min="60" max="240" step="1">
+      </div>
+      <div class="val" id="v_serverLinesY"></div>
+    </div>
+    <div class="row">
+      <div>
+        <div class="name">GOJA/DENPO文字サイズ</div>
+        <input type="range" id="serverLinesSize" min="14" max="40" step="1">
+      </div>
+      <div class="val" id="v_serverLinesSize"></div>
+    </div>
+
+    <h3>NET (2行目)</h3>
+    <div class="row">
+      <div>
+        <div class="name">UPLOAD/DOWNLOADサイズ</div>
+        <input type="range" id="netSubSize" min="10" max="28" step="1">
+      </div>
+      <div class="val" id="v_netSubSize"></div>
+    </div>
+    <div class="row">
+      <div>
+        <div class="name">2行目の間隔</div>
+        <input type="range" id="netSubGap" min="0" max="14" step="1">
+      </div>
+      <div class="val" id="v_netSubGap"></div>
+    </div>
+
+    <div class="btns">
+      <button id="copyBtn">COPY</button>
+      <button id="resetBtn">RESET</button>
+    </div>
+  </div>
+
+  <div class="tunerDock">
+    <div class="tunerBar">
+      <div class="label">GOJA TUNER</div>
+      <button id="toggleBtn">SHOW</button>
     </div>
   </div>
 
   <script>
-    // 時計
-    function pad2(n){ return String(n).padStart(2,"0"); }
-    function tickClock(){
+    // ===== defaults =====
+    const defaults = {
+      titleY: 19, numY: 4, unitY: 0, dashY: -2, statusY: -10,
+      titleSize: 33, numSize: 112, unitSize: 26, statusSize: 28,
+      dashW: 220, cardSize: 340, cardGap: 22,
+      serverBadgeY: 118, serverLinesY: 132, serverLinesSize: 28,
+      netSubSize: 18, netSubGap: 6,
+    };
+
+    const root = document.documentElement;
+
+    function setVar(name, value, unit="px"){
+      root.style.setProperty(`--${name}`, `${value}${unit}`);
+    }
+
+    function getVarNum(name){
+      const v = getComputedStyle(root).getPropertyValue(`--${name}`).trim();
+      return parseFloat(v.replace("px","")) || 0;
+    }
+
+    function bindSlider(id, unit="px"){
+      const el = document.getElementById(id);
+      const v = document.getElementById("v_" + id);
+
+      // init
+      el.value = defaults[id];
+      v.textContent = `${defaults[id]}${unit}`;
+
+      // apply
+      setVar(id, defaults[id], unit);
+
+      el.addEventListener("input", () => {
+        const val = parseFloat(el.value);
+        v.textContent = `${val}${unit}`;
+        setVar(id, val, unit);
+      });
+    }
+
+    function resetAll(){
+      for(const k in defaults){
+        const el = document.getElementById(k);
+        if(el){
+          el.value = defaults[k];
+          const v = document.getElementById("v_" + k);
+          if(v) v.textContent = `${defaults[k]}px`;
+          setVar(k, defaults[k], "px");
+        }
+      }
+    }
+
+    function copyAll(){
+      const keys = Object.keys(defaults);
+
+      const lines = [];
+      lines.push("GOJA TUNER 値（これを俺に送れ）");
+      for(const k of keys){
+        const val = Math.round(getVarNum(k));
+        lines.push(`${k}=${val}`);
+      }
+      const text = lines.join("\n");
+
+      navigator.clipboard?.writeText(text).then(() => {
+        alert("コピーした");
+      }).catch(() => {
+        // iOS fallback
+        prompt("コピーして送って", text);
+      });
+    }
+
+    // ===== bind all sliders =====
+    [
+      "titleY","numY","unitY","dashY","statusY",
+      "titleSize","numSize","unitSize","statusSize",
+      "dashW","cardSize","cardGap",
+      "serverBadgeY","serverLinesY","serverLinesSize",
+      "netSubSize","netSubGap"
+    ].forEach(id => bindSlider(id));
+
+    // ===== panel toggle =====
+    const panel = document.getElementById("panel");
+    const toggleBtn = document.getElementById("toggleBtn");
+    toggleBtn.addEventListener("click", () => {
+      const show = panel.style.display !== "block";
+      panel.style.display = show ? "block" : "none";
+      toggleBtn.textContent = show ? "HIDE" : "SHOW";
+    });
+
+    document.getElementById("resetBtn").addEventListener("click", resetAll);
+    document.getElementById("copyBtn").addEventListener("click", copyAll);
+
+    // ===== clock =====
+    function tick(){
       const d = new Date();
-      const s = `${d.getFullYear()}.${pad2(d.getMonth()+1)}.${pad2(d.getDate())}  ${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
+      const pad = (n)=> String(n).padStart(2,"0");
+      const s = `${d.getFullYear()}.${pad(d.getMonth()+1)}.${pad(d.getDate())}  ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
       document.getElementById("clock").textContent = s;
     }
-    setInterval(tickClock, 250);
-    tickClock();
+    tick();
+    setInterval(tick, 1000);
 
-    // デモ値（後でAPI差し替え）
-    const el = {
-      cpuTemp: document.getElementById("cpuTemp"),
-      cpuTempSt: document.getElementById("cpuTempSt"),
-      cpuUse: document.getElementById("cpuUse"),
-      cpuUseSt: document.getElementById("cpuUseSt"),
-      memUse: document.getElementById("memUse"),
-      memUseSt: document.getElementById("memUseSt"),
-      up: document.getElementById("up"),
-      upSt: document.getElementById("upSt"),
-      down: document.getElementById("down"),
-      downSt: document.getElementById("downSt"),
-    };
-
-    function statusBy(val, warn, crit){
-      if(val >= crit) return "稼働状態：警戒";
-      if(val >= warn) return "稼働状態：注意";
-      return "稼働状態：通常";
-    }
-
-    let state = {
-      t: 58,
-      cpu: 41,
-      mem: 59,
-      up: 46,
-      down: 121,
-    };
-
-    function step(){
-      // 少しだけ動かす（潰れない確認用）
-      const jig = (a, min, max, s=1) => {
-        a += (Math.random() < 0.5 ? -s : s) * (Math.random() < 0.7 ? 1 : 0);
-        if(a < min) a = min;
-        if(a > max) a = max;
-        return a;
-      };
-
-      state.t = jig(state.t, 40, 85, 1);
-      state.cpu = jig(state.cpu, 0, 100, 2);
-      state.mem = jig(state.mem, 0, 100, 1);
-      state.up = jig(state.up, 1, 200, 3);
-      state.down = jig(state.down, 1, 500, 5);
-
-      el.cpuTemp.textContent = Math.round(state.t);
-      el.cpuTempSt.textContent = statusBy(state.t, 70, 80);
-
-      el.cpuUse.textContent = Math.round(state.cpu);
-      el.cpuUseSt.textContent = statusBy(state.cpu, 70, 90);
-
-      el.memUse.textContent = Math.round(state.mem);
-      el.memUseSt.textContent = statusBy(state.mem, 75, 90);
-
-      el.up.textContent = Math.round(state.up);
-      el.upSt.textContent = "稼働状態：通常";
-
-      el.down.textContent = Math.round(state.down);
-      el.downSt.textContent = "稼働状態：通常";
-    }
-
-    setInterval(step, 1200);
-    step();
+    // ===== demo values (あとでAPIに差し替え可能) =====
+    // ここは「見た目確認」用。必要なら消してOK。
   </script>
 </body>
 </html>
