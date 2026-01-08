@@ -1,357 +1,345 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>GOJA Server Monitor</title>
-
-  <!-- Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Noto+Serif+JP:wght@700&display=swap" rel="stylesheet">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>GOJA UI Tuner (Single Hex)</title>
 
   <style>
+    /* ===== base ===== */
     :root{
-      --eva:#f2b200;
-      --bg:#000;
+      --bg: #000;
+      --card: rgba(18,18,18,.92);
+      --stroke: #f2b100;          /* エヴァ寄りの黄 */
+      --stroke2: rgba(242,177,0,.55);
+      --text: #f2b100;
+      --muted: rgba(242,177,0,.75);
+      --soft: rgba(255,255,255,.08);
 
-      --title-size: clamp(18px, 4.6vw, 24px);
-      --sub-size:   clamp(12px, 3.4vw, 16px);
-      --value-size: clamp(56px, 14vw, 92px);
-      --unit-size:  clamp(14px, 4.2vw, 22px);
-      --status-size:clamp(14px, 4.1vw, 20px);
+      /* ===== TUNING: 縦位置（ここだけ動かす） ===== */
+      --y-title: 0px;
+      --y-value: 0px;
+      --y-dash:  0px;
+      --y-status:0px;
     }
 
-    *{ box-sizing:border-box; }
+    html,body{
+      height: 100%;
+      margin: 0;
+      background: var(--bg);
+      color: #fff;
+    }
+
     body{
-      margin:0;
-      background:var(--bg);
-      color:var(--eva);
-      -webkit-font-smoothing:antialiased;
-      font-synthesis-weight:none;
+      display:flex;
+      align-items:flex-start;
+      justify-content:center;
+      padding: 18px 14px 140px; /* 下にチューナー分 */
+      box-sizing: border-box;
     }
 
     .wrap{
-      width:min(680px, 100%);
-      margin:0 auto;
-      padding:12px 10px 28px; /* ← 縦を詰める */
+      width: min(520px, 100%);
     }
 
-    .stack{
-      display:flex;
-      flex-direction:column;
-      gap:10px; /* ← 縦を詰める */
+    /* ===== card ===== */
+    .card{
+      width: 100%;
+      border-radius: 22px;
+      background: var(--card);
+      box-shadow: 0 10px 40px rgba(0,0,0,.6);
+      padding: 18px 14px;
+      box-sizing: border-box;
     }
 
-    .panel{
-      border-radius:22px;
-      background:rgba(255,255,255,0.06);
-      box-shadow:
-        0 12px 28px rgba(0,0,0,0.65),
-        inset 0 0 0 1px rgba(255,255,255,0.05);
-      overflow:hidden;
-      padding:10px; /* ← 縦を詰める */
-    }
-
-    /* ✅ ここが本丸：カード高さをスマホ縦で収まるように固定 */
-    .hexbox{
-      position:relative;
-      width:100%;
-      aspect-ratio:1 / 1
-      height: auto; /* ← でかすぎ問題を潰す */
-      min-height: 420px;        /* ← 小さすぎ保険 */
-    }
-
-    .hexsvg{
-      position:absolute;
-      inset:0;
-      width:100%;
-      height:100%;
-      display:block;
-    }
-    .hex-outer{
-      fill: transparent;
-      stroke: var(--eva);
-      stroke-width: 3.2;
-      opacity: 0.95;
-    }
-    .hex-inner{
-      fill: transparent;
-      stroke: var(--eva);
-      stroke-width: 2.2;
-      opacity: 0.55;
-    }
-
-    .content{
-      position:absolute;
-      inset:0;
-      padding: 10px 14px; /* ← 少し詰める（横は触らない） */
-      display:block;
-    }
-
-    /* ✅ 縦を圧縮した分だけ、%で位置を再配置（見た目は維持） */
-    .title{
-      position:absolute;
-      left:0; right:0;
-      top: 11%;
-      text-align:center;
-      font-family:"Noto Serif JP", serif;
-      font-weight:700;
-      font-size:var(--title-size);
-      letter-spacing:0.16em;
-      white-space:nowrap;
-      text-shadow: 0 0 16px rgba(242,178,0,0.10);
-    }
-
-    .sub{
-      position:absolute;
-      left:0; right:0;
-      top: 20%;
-      text-align:center;
-      font-family:"Share Tech Mono", ui-monospace, monospace;
-      font-size:var(--sub-size);
-      letter-spacing:0.30em;
-      opacity:0.85;
-      white-space:nowrap;
-    }
-
-    .valueRow{
-      position:absolute;
-      left:0; right:0;
-      top: 34%;
-      display:flex;
-      align-items:baseline;
-      justify-content:center;
-      gap:12px;
-      padding:0 10px;
-    }
-
-    .value{
-      font-family:"Share Tech Mono", ui-monospace, monospace;
-      font-size:var(--value-size);
-      line-height: 0.95;
-      letter-spacing:0.02em;
-      white-space:nowrap;
-      text-shadow: 0 0 18px rgba(242,178,0,0.12);
-    }
-
-    .unit{
-      font-family:"Share Tech Mono", ui-monospace, monospace;
-      font-size:var(--unit-size);
-      opacity:0.75;
-      transform: translateY(-6px);
-      white-space:nowrap;
-    }
-
-    .dash{
-      position:absolute;
-      left:50%;
-      top: 67%;
-      width: 58%;
-      transform:translateX(-50%);
-      border-top: 3px dashed rgba(242,178,0,0.45);
-    }
-
-    .status{
-      position:absolute;
-      left:0; right:0;
-      top: 76%;
-      text-align:center;
-      font-family:"Noto Serif JP", serif;
-      font-weight:700;
-      font-size:var(--status-size);
-      letter-spacing:0.18em;
-      white-space:nowrap;
-      opacity:0.96;
-    }
-
-    .serversTitle{
-      position:absolute;
-      left:0; right:0;
-      top: 11%;
-      text-align:center;
-      font-family:"Noto Serif JP", serif;
-      font-weight:700;
-      font-size:var(--title-size);
-      letter-spacing:0.14em;
-      white-space:nowrap;
-    }
-
-    .servers{
-      position:absolute;
-      left: 12%;
-      right: 12%;
-      top: 34%;
-      display:flex;
-      flex-direction:column;
-      gap:14px;
-    }
-
-    .svRow{
+    /* “横幅はスマホいっぱい” を優先。六角形をでかく見せる */
+    .hexStage{
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1 / 0.86;        /* 横長気味に見せつつ、正六角形はSVG内で担保 */
+      max-height: 360px;
       display:flex;
       align-items:center;
-      justify-content:space-between;
-      gap:12px;
+      justify-content:center;
     }
 
-    .svName{
-      font-family:"Share Tech Mono", ui-monospace, monospace;
-      font-size: clamp(14px, 4.1vw, 18px);
-      letter-spacing:0.14em;
-      line-height:1.05;
-      opacity:0.92;
-      white-space:pre-line;
+    /* SVG（正六角形） */
+    svg.hex{
+      width: 100%;
+      height: 100%;
+      display:block;
     }
 
-    .badge{
-      min-width:86px;
-      text-align:center;
-      padding:9px 12px;
-      border-radius:999px;
-      border:2px solid rgba(242,178,0,0.55);
-      background:rgba(0,0,0,0.60);
-      font-family:"Noto Serif JP", serif;
-      font-weight:700;
-      letter-spacing:0.14em;
-      white-space:nowrap;
-      font-size: clamp(13px, 3.8vw, 16px);
+    .hexOuter{ stroke: var(--stroke); stroke-width: 3.6; fill: none; }
+    .hexInner{ stroke: var(--stroke2); stroke-width: 2.2; fill: none; }
+
+    /* ===== content (触るのは縦位置だけ) ===== */
+    .overlay{
+      position:absolute;
+      inset: 0;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      pointer-events:none;
+    }
+
+    /* 題目：日本語は明朝太字寄せ */
+    .metric-title{
+      transform: translateY(var(--y-title));
+      font-family:
+        "Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",
+        "Times New Roman",serif;
+      font-weight: 800;
+      letter-spacing: .06em;
+      font-size: clamp(18px, 4.2vw, 26px);
+      color: var(--text);
+      text-shadow: 0 0 18px rgba(242,177,0,.12);
+      margin-bottom: 10px; /* 見た目のベース。縦位置はスライダーで */
+    }
+
+    /* 数字：デジタル寄せ */
+    .metric-value{
+      transform: translateY(var(--y-value));
+      display:flex;
+      align-items:baseline;
+      gap: 10px;
+      color: var(--text);
+      text-shadow: 0 0 26px rgba(242,177,0,.14);
+      margin: 0;
+    }
+
+    .metric-value .val{
+      font-family:
+        "DS-Digital","Digital-7","Orbitron","Share Tech Mono",
+        ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-weight: 700;
+      font-size: clamp(72px, 16vw, 120px); /* ← “数字もっと大きく” */
+      line-height: 1;
+    }
+
+    .metric-value .unit{
+      font-family:
+        "DS-Digital","Digital-7","Orbitron","Share Tech Mono",
+        ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-weight: 600;
+      font-size: clamp(16px, 4.2vw, 24px);
+      opacity: .7;
+      transform: translateY(6px);
+    }
+
+    /* 点線：短めに（スライダーで縦だけ動く） */
+    .metric-dash{
+      transform: translateY(var(--y-dash));
+      width: 62%;                 /* ← “点線はもう少し短くていい” */
+      border-bottom: 3px dashed rgba(242,177,0,.45);
+      margin-top: 16px;
+      margin-bottom: 14px;
+    }
+
+    /* 稼働状態：もう少し上＆文字大きめ（スライダーで縦だけ） */
+    .metric-status{
+      transform: translateY(var(--y-status));
+      font-family:
+        "Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",
+        "Times New Roman",serif;
+      font-weight: 800;
+      letter-spacing: .08em;
+      font-size: clamp(14px, 3.6vw, 20px); /* ← “もう少し文字大きく” */
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    /* ===== tuner UI (あなたが位置を決める用) ===== */
+    #tuner{
+      position: fixed;
+      left: 10px; right: 10px; bottom: 10px;
+      background: rgba(0,0,0,.86);
+      border: 1px solid rgba(255,255,255,.14);
+      border-radius: 16px;
+      padding: 12px;
+      z-index: 9999;
+      color: #fff;
+      font-family: system-ui, -apple-system, sans-serif;
+      backdrop-filter: blur(8px);
+    }
+    #tuner.hidden{ display:none; }
+    #tuner label{
+      display:block;
+      margin: 10px 0;
+      font-size: 12px;
+      opacity: .95;
+    }
+    #tuner input[type="range"]{
+      width: 100%;
+      margin-top: 6px;
+    }
+    .tunerHead{
+      display:flex; align-items:center; justify-content:space-between;
+      margin-bottom: 6px;
+      font-size: 13px;
+    }
+    .tunerHead button, .tunerBtns button{
+      border: 1px solid rgba(255,255,255,.2);
+      background: rgba(255,255,255,.08);
+      color:#fff;
+      padding: 8px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+    }
+    .tunerBtns{
+      display:flex; gap:10px;
+      margin-top: 8px;
+    }
+    .tunerBtns button{ flex:1; }
+
+    /* iPhoneの下安全領域 */
+    @supports(padding: max(0px)){
+      #tuner{ bottom: max(10px, env(safe-area-inset-bottom)); }
+      body{ padding-bottom: calc(140px + env(safe-area-inset-bottom)); }
     }
   </style>
 </head>
 
 <body>
   <div class="wrap">
-    <div class="stack">
+    <div class="card">
+      <div class="hexStage">
+        <!-- 正六角形：viewBox内の座標が“正”なので崩れない -->
+        <svg class="hex" viewBox="0 0 100 86" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+          <!-- 正六角形（横幅いっぱいで見せるためにこのviewBox比） -->
+          <!-- points: (50,2) (93,23) (93,63) (50,84) (7,63) (7,23) -->
+          <polygon class="hexOuter" points="50,2 93,23 93,63 50,84 7,63 7,23"></polygon>
+          <polygon class="hexInner" points="50,9 86,27 86,59 50,77 14,59 14,27"></polygon>
+        </svg>
 
-      <!-- CPU温度 -->
-      <div class="panel">
-        <div class="hexbox">
-          <svg class="hexsvg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-            <polygon class="hex-outer" points="50,4 92,27 92,73 50,96 8,73 8,27"></polygon>
-            <polygon class="hex-inner" points="50,10 86,30 86,70 50,90 14,70 14,30"></polygon>
-          </svg>
-          <div class="content">
-            <div class="title">CPU温度</div>
-            <div class="valueRow">
-              <div class="value" id="cpuTemp">62</div>
-              <div class="unit">°C</div>
-            </div>
-            <div class="dash"></div>
-            <div class="status">稼働状態：通常</div>
+        <!-- 文字・点線（縦だけスライダーで動かす） -->
+        <div class="overlay">
+          <div class="metric-title">メモリ稼働率</div>
+
+          <div class="metric-value">
+            <span class="val">60</span>
+            <span class="unit">%</span>
           </div>
+
+          <div class="metric-dash"></div>
+
+          <div class="metric-status">稼働状態：通常</div>
         </div>
       </div>
+    </div>
+  </div>
 
-      <!-- CPU稼働率 -->
-      <div class="panel">
-        <div class="hexbox">
-          <svg class="hexsvg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-            <polygon class="hex-outer" points="50,4 92,27 92,73 50,96 8,73 8,27"></polygon>
-            <polygon class="hex-inner" points="50,10 86,30 86,70 50,90 14,70 14,30"></polygon>
-          </svg>
-          <div class="content">
-            <div class="title">CPU稼働率</div>
-            <div class="valueRow">
-              <div class="value" id="cpuUse">45</div>
-              <div class="unit">%</div>
-            </div>
-            <div class="dash"></div>
-            <div class="status">稼働状態：通常</div>
-          </div>
-        </div>
-      </div>
+  <!-- ===== TUNER UI ===== -->
+  <div id="tuner">
+    <div class="tunerHead">
+      <div>位置調整（縦だけ）</div>
+      <button id="tunerToggle" type="button">HIDE</button>
+    </div>
 
-      <!-- メモリ稼働率 -->
-      <div class="panel">
-        <div class="hexbox">
-          <svg class="hexsvg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-            <polygon class="hex-outer" points="50,4 92,27 92,73 50,96 8,73 8,27"></polygon>
-            <polygon class="hex-inner" points="50,10 86,30 86,70 50,90 14,70 14,30"></polygon>
-          </svg>
-          <div class="content">
-            <div class="title">メモリ稼働率</div>
-            <div class="valueRow">
-              <div class="value" id="memUse">60</div>
-              <div class="unit">%</div>
-            </div>
-            <div class="dash"></div>
-            <div class="status">稼働状態：通常</div>
-          </div>
-        </div>
-      </div>
+    <label>題目Y <span id="vTitle">0</span>px
+      <input id="sTitle" type="range" min="-120" max="120" value="0">
+    </label>
 
-      <!-- 通信速度 DOWNLOAD -->
-      <div class="panel">
-        <div class="hexbox">
-          <svg class="hexsvg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-            <polygon class="hex-outer" points="50,4 92,27 92,73 50,96 8,73 8,27"></polygon>
-            <polygon class="hex-inner" points="50,10 86,30 86,70 50,90 14,70 14,30"></polygon>
-          </svg>
-          <div class="content">
-            <div class="title">通信速度</div>
-            <div class="sub">DOWNLOAD</div>
-            <div class="valueRow">
-              <div class="value" id="dl">121</div>
-              <div class="unit">Mbps</div>
-            </div>
-            <div class="dash"></div>
-            <div class="status">稼働状態：通常</div>
-          </div>
-        </div>
-      </div>
+    <label>数字Y <span id="vValue">0</span>px
+      <input id="sValue" type="range" min="-160" max="160" value="0">
+    </label>
 
-      <!-- 通信速度 UPLOAD -->
-      <div class="panel">
-        <div class="hexbox">
-          <svg class="hexsvg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-            <polygon class="hex-outer" points="50,4 92,27 92,73 50,96 8,73 8,27"></polygon>
-            <polygon class="hex-inner" points="50,10 86,30 86,70 50,90 14,70 14,30"></polygon>
-          </svg>
-          <div class="content">
-            <div class="title">通信速度</div>
-            <div class="sub">UPLOAD</div>
-            <div class="valueRow">
-              <div class="value" id="ul">35</div>
-              <div class="unit">Mbps</div>
-            </div>
-            <div class="dash"></div>
-            <div class="status">稼働状態：通常</div>
-          </div>
-        </div>
-      </div>
+    <label>点線Y <span id="vDash">0</span>px
+      <input id="sDash" type="range" min="-160" max="160" value="0">
+    </label>
 
-      <!-- サーバー稼働状況 -->
-      <div class="panel">
-        <div class="hexbox">
-          <svg class="hexsvg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-            <polygon class="hex-outer" points="50,4 92,27 92,73 50,96 8,73 8,27"></polygon>
-            <polygon class="hex-inner" points="50,10 86,30 86,70 50,90 14,70 14,30"></polygon>
-          </svg>
-          <div class="content">
-            <div class="serversTitle">サーバー稼働状況</div>
+    <label>稼働状態Y <span id="vStatus">0</span>px
+      <input id="sStatus" type="range" min="-160" max="160" value="0">
+    </label>
 
-            <div class="servers">
-              <div class="svRow">
-                <div class="svName">GOJA<br>DENPO-SERVER</div>
-                <div class="badge">稼働中</div>
-              </div>
-              <div class="svRow">
-                <div class="svName">GOJA<br>CLOUD-SERVER</div>
-                <div class="badge">稼働中</div>
-              </div>
-            </div>
-
-            <div class="dash"></div>
-            <div class="status">稼働状態：通常</div>
-          </div>
-        </div>
-      </div>
-
+    <div class="tunerBtns">
+      <button id="copyPos" type="button">COPY</button>
+      <button id="resetPos" type="button">RESET</button>
     </div>
   </div>
 
   <script>
-    // UI確認用の仮値（動作側に合わせて差し替え）
+  (() => {
+    const keys = ["title","value","dash","status"];
+    const $ = (id) => document.getElementById(id);
+
+    const sliders = {
+      title: $("sTitle"),
+      value: $("sValue"),
+      dash:  $("sDash"),
+      status:$("sStatus"),
+    };
+    const labels = {
+      title: $("vTitle"),
+      value: $("vValue"),
+      dash:  $("vDash"),
+      status:$("vStatus"),
+    };
+
+    // load
+    const saved = JSON.parse(localStorage.getItem("goja_pos") || "{}");
+    keys.forEach(k => {
+      const v = (saved[k] ?? 0);
+      sliders[k].value = v;
+      labels[k].textContent = v;
+      document.documentElement.style.setProperty(`--y-${k}`, `${v}px`);
+    });
+
+    // bind
+    keys.forEach(k => {
+      sliders[k].addEventListener("input", () => {
+        const v = parseInt(sliders[k].value, 10) || 0;
+        labels[k].textContent = v;
+        document.documentElement.style.setProperty(`--y-${k}`, `${v}px`);
+
+        const cur = JSON.parse(localStorage.getItem("goja_pos") || "{}");
+        cur[k] = v;
+        localStorage.setItem("goja_pos", JSON.stringify(cur));
+      });
+    });
+
+    // hide/show
+    $("tunerToggle").addEventListener("click", () => {
+      const t = $("tuner");
+      if (t.classList.contains("hidden")) {
+        t.classList.remove("hidden");
+        $("tunerToggle").textContent = "HIDE";
+      } else {
+        t.classList.add("hidden");
+        $("tunerToggle").textContent = "SHOW";
+      }
+    });
+
+    // copy
+    $("copyPos").addEventListener("click", async () => {
+      const cur = JSON.parse(localStorage.getItem("goja_pos") || "{}");
+      const text = JSON.stringify({
+        y_title:  cur.title ?? 0,
+        y_value:  cur.value ?? 0,
+        y_dash:   cur.dash  ?? 0,
+        y_status: cur.status?? 0,
+      }, null, 2);
+
+      try{
+        await navigator.clipboard.writeText(text);
+        $("copyPos").textContent = "COPIED";
+        setTimeout(()=> $("copyPos").textContent="COPY", 900);
+      }catch(e){
+        alert(text);
+      }
+    });
+
+    // reset
+    $("resetPos").addEventListener("click", () => {
+      localStorage.removeItem("goja_pos");
+      keys.forEach(k => {
+        sliders[k].value = 0;
+        labels[k].textContent = 0;
+        document.documentElement.style.setProperty(`--y-${k}`, `0px`);
+      });
+    });
+  })();
   </script>
 </body>
 </html>
