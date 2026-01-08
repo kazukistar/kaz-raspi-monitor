@@ -15,7 +15,6 @@
       --eva:#f2b200;
       --bg:#000;
 
-      /* 縦画面でも潰れないように clamp で制御 */
       --title-size: clamp(18px, 4.6vw, 24px);
       --sub-size:   clamp(12px, 3.4vw, 16px);
       --value-size: clamp(56px, 14vw, 92px);
@@ -35,14 +34,13 @@
     .wrap{
       width:min(680px, 100%);
       margin:0 auto;
-      padding:18px 12px 44px;
+      padding:12px 10px 28px; /* ← 縦を詰める */
     }
 
-    /* 1列固定（スマホ縦前提） */
     .stack{
       display:flex;
       flex-direction:column;
-      gap:14px;
+      gap:10px; /* ← 縦を詰める */
     }
 
     .panel{
@@ -52,25 +50,23 @@
         0 12px 28px rgba(0,0,0,0.65),
         inset 0 0 0 1px rgba(255,255,255,0.05);
       overflow:hidden;
-      padding:14px;
+      padding:10px; /* ← 縦を詰める */
     }
 
-    /* 縦画面向け：ほぼ正方形〜少し縦長 */
+    /* ✅ ここが本丸：カード高さをスマホ縦で収まるように固定 */
     .hexbox{
       position:relative;
       width:100%;
-      aspect-ratio: 10 / 11; /* ← 縦向き */
-      min-height: 240px;
+      height: min(30vh, 250px); /* ← でかすぎ問題を潰す */
+      min-height: 200px;        /* ← 小さすぎ保険 */
     }
 
-    /* ✅ 正六角形を絶対に潰さない */
     .hexsvg{
       position:absolute;
       inset:0;
       width:100%;
       height:100%;
       display:block;
-      /* meet にするので歪まない */
     }
     .hex-outer{
       fill: transparent;
@@ -88,15 +84,15 @@
     .content{
       position:absolute;
       inset:0;
-      padding: 14px 16px;
+      padding: 10px 14px; /* ← 少し詰める（横は触らない） */
       display:block;
     }
 
-    /* 位置は全部 %（端末差で潰れない） */
+    /* ✅ 縦を圧縮した分だけ、%で位置を再配置（見た目は維持） */
     .title{
       position:absolute;
       left:0; right:0;
-      top: 14%;
+      top: 11%;
       text-align:center;
       font-family:"Noto Serif JP", serif;
       font-weight:700;
@@ -109,7 +105,7 @@
     .sub{
       position:absolute;
       left:0; right:0;
-      top: 23%;
+      top: 20%;
       text-align:center;
       font-family:"Share Tech Mono", ui-monospace, monospace;
       font-size:var(--sub-size);
@@ -121,7 +117,7 @@
     .valueRow{
       position:absolute;
       left:0; right:0;
-      top: 38%;
+      top: 34%;
       display:flex;
       align-items:baseline;
       justify-content:center;
@@ -149,8 +145,8 @@
     .dash{
       position:absolute;
       left:50%;
-      top: 70%;
-      width: 58%;              /* 点線は短め */
+      top: 67%;
+      width: 58%;
       transform:translateX(-50%);
       border-top: 3px dashed rgba(242,178,0,0.45);
     }
@@ -158,7 +154,7 @@
     .status{
       position:absolute;
       left:0; right:0;
-      top: 78%;                /* 稼働状態は少し上 */
+      top: 76%;
       text-align:center;
       font-family:"Noto Serif JP", serif;
       font-weight:700;
@@ -168,11 +164,10 @@
       opacity:0.96;
     }
 
-    /* サーバ稼働状況カード用 */
     .serversTitle{
       position:absolute;
       left:0; right:0;
-      top: 14%;
+      top: 11%;
       text-align:center;
       font-family:"Noto Serif JP", serif;
       font-weight:700;
