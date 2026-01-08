@@ -1,237 +1,170 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>KAZ-RASPI MONITOR</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UI Layout Test Index</title>
 
 <style>
-/* =====================
-   基本設定
-===================== */
-* {
-  box-sizing: border-box;
+body{
+  margin:0;
+  background:#000;
+  color:#fff;
+  font-family:"Times New Roman", serif;
 }
 
-body {
-  margin: 0;
-  background: radial-gradient(circle at top, #1a1400, #000 70%);
-  color: #f5c400;
-  font-family: "Times New Roman", serif;
+section{
+  padding:40px 0 80px;
+  border-bottom:1px solid #222;
 }
 
-/* =====================
-   ヘッダ
-===================== */
-header {
-  padding: 20px 16px 24px;
-  border-bottom: 1px solid rgba(245,196,0,0.3);
+h2{
+  text-align:center;
+  margin-bottom:30px;
+  font-size:22px;
+  letter-spacing:2px;
 }
 
-header h1 {
-  margin: 0;
-  font-size: 28px;
-  letter-spacing: 0.15em;
+.grid{
+  display:flex;
+  flex-direction:column;
+  gap:40px;
+  align-items:center;
 }
 
-header .sub {
-  margin-top: 8px;
-  font-size: 14px;
-  opacity: 0.8;
+.hex{
+  width:280px;
+  height:240px;
 }
 
-/* =====================
-   全体
-===================== */
-.container {
-  max-width: 420px;
-  margin: 0 auto;
-  padding: 32px 0 120px;
+.label{
+  font-family:"HGP明朝E", serif;
+  font-weight:bold;
+  text-anchor:middle;
 }
 
-/* =====================
-   六角カード
-===================== */
-.card {
-  margin: 56px auto;
-  width: 320px;
+.value{
+  font-family:"Digital-7", monospace;
+  text-anchor:middle;
 }
 
-.hex {
-  position: relative;
-  width: 100%;
+.small{
+  font-size:14px;
 }
 
-.hex svg {
-  width: 100%;
-  height: auto;
-  display: block;
+.mid{
+  font-size:28px;
 }
 
-/* =====================
-   中身
-===================== */
-.hex-content {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
-  text-align: center;
+.big{
+  font-size:52px;
 }
 
-.title {
-  font-family: "HGP明朝E", serif;
-  font-weight: bold;
-  font-size: 30px;
-  margin-bottom: 18px;
-  letter-spacing: 0.15em;
-}
-
-.value {
-  font-family: "Digital-7", monospace;
-  font-size: 76px;
-  line-height: 1;
-}
-
-.unit {
-  font-size: 20px;
-  margin-left: 6px;
-}
-
-.divider {
-  width: 70%;
-  border-top: 2px dashed rgba(245,196,0,0.6);
-  margin: 18px 0 14px;
-}
-
-.status {
-  font-family: "HGP明朝E", serif;
-  font-size: 18px;
-  letter-spacing: 0.15em;
-}
-
-/* =====================
-   サーバー一覧
-===================== */
-.server-list {
-  margin-top: 18px;
-  width: 80%;
-  text-align: left;
-}
-
-.server-item {
-  display: flex;
-  justify-content: space-between;
-  margin: 10px 0;
-  font-size: 16px;
-  letter-spacing: 0.1em;
+.status{
+  font-family:"HGP明朝E", serif;
+  font-size:16px;
 }
 </style>
 </head>
 
 <body>
 
-<header>
-  <h1>KAZ-RASPI</h1>
-  <div class="sub">SERVER STATUS MONITOR / UPDATE 1.0s</div>
-</header>
-
-<div class="container">
-
+<!-- ===================== A ===================== -->
+<section style="color:#f5c400">
+<h2>A / 中央数値主役型</h2>
+<div class="grid">
   <!-- CPU温度 -->
-  <div class="card">
-    <div class="hex">
-      <svg viewBox="0 0 100 86.6" preserveAspectRatio="xMidYMid meet">
-        <polygon points="50,0 100,21.65 100,64.95 50,86.6 0,64.95 0,21.65"
-          fill="none" stroke="#f5c400" stroke-width="2"/>
-        <polygon points="50,4 96,23.5 96,63.1 50,82.6 4,63.1 4,23.5"
-          fill="none" stroke="#f5c400" stroke-width="1"/>
-      </svg>
-      <div class="hex-content">
-        <div class="title">CPU温度</div>
-        <div>
-          <span class="value">62</span>
-          <span class="unit">℃</span>
-        </div>
-        <div class="divider"></div>
-        <div class="status">稼働状態：通常</div>
-      </div>
-    </div>
-  </div>
+  <svg class="hex" viewBox="0 0 300 260">
+    <polygon points="150,10 290,80 290,180 150,250 10,180 10,80" fill="none" stroke="#f5c400" stroke-width="6"/>
+    <text x="150" y="70" class="label mid">CPU温度</text>
+    <text x="150" y="150" class="value big">62</text>
+    <text x="185" y="150" class="label mid">℃</text>
+    <text x="150" y="205" class="status">稼働状態：通常</text>
+  </svg>
 
   <!-- CPU稼働率 -->
-  <div class="card">
-    <div class="hex">
-      <svg viewBox="0 0 100 86.6">
-        <polygon points="50,0 100,21.65 100,64.95 50,86.6 0,64.95 0,21.65"
-          fill="none" stroke="#f5c400" stroke-width="2"/>
-        <polygon points="50,4 96,23.5 96,63.1 50,82.6 4,63.1 4,23.5"
-          fill="none" stroke="#f5c400" stroke-width="1"/>
-      </svg>
-      <div class="hex-content">
-        <div class="title">CPU稼働率</div>
-        <div>
-          <span class="value">45</span>
-          <span class="unit">%</span>
-        </div>
-        <div class="divider"></div>
-        <div class="status">稼働状態：通常</div>
-      </div>
-    </div>
-  </div>
+  <svg class="hex" viewBox="0 0 300 260">
+    <polygon points="150,10 290,80 290,180 150,250 10,180 10,80" fill="none" stroke="#f5c400" stroke-width="6"/>
+    <text x="150" y="70" class="label mid">CPU稼働率</text>
+    <text x="150" y="150" class="value big">45</text>
+    <text x="185" y="150" class="label mid">%</text>
+    <text x="150" y="205" class="status">稼働状態：通常</text>
+  </svg>
 
   <!-- メモリ -->
-  <div class="card">
-    <div class="hex">
-      <svg viewBox="0 0 100 86.6">
-        <polygon points="50,0 100,21.65 100,64.95 50,86.6 0,64.95 0,21.65"
-          fill="none" stroke="#f5c400" stroke-width="2"/>
-        <polygon points="50,4 96,23.5 96,63.1 50,82.6 4,63.1 4,23.5"
-          fill="none" stroke="#f5c400" stroke-width="1"/>
-      </svg>
-      <div class="hex-content">
-        <div class="title">メモリ稼働率</div>
-        <div>
-          <span class="value">60</span>
-          <span class="unit">%</span>
-        </div>
-        <div class="divider"></div>
-        <div class="status">稼働状態：通常</div>
-      </div>
-    </div>
-  </div>
+  <svg class="hex" viewBox="0 0 300 260">
+    <polygon points="150,10 290,80 290,180 150,250 10,180 10,80" fill="none" stroke="#f5c400" stroke-width="6"/>
+    <text x="150" y="70" class="label mid">メモリ稼働率</text>
+    <text x="150" y="150" class="value big">60</text>
+    <text x="185" y="150" class="label mid">%</text>
+    <text x="150" y="205" class="status">稼働状態：通常</text>
+  </svg>
 
-  <!-- サーバー -->
-  <div class="card">
-    <div class="hex">
-      <svg viewBox="0 0 100 86.6">
-        <polygon points="50,0 100,21.65 100,64.95 50,86.6 0,64.95 0,21.65"
-          fill="none" stroke="#f5c400" stroke-width="2"/>
-        <polygon points="50,4 96,23.5 96,63.1 50,82.6 4,63.1 4,23.5"
-          fill="none" stroke="#f5c400" stroke-width="1"/>
-      </svg>
-      <div class="hex-content">
-        <div class="title">サーバー稼働</div>
-        <div class="server-list">
-          <div class="server-item">
-            <span>GOJA<br>DENPO-SERVER</span>
-            <span>稼働中</span>
-          </div>
-          <div class="server-item">
-            <span>GOJA<br>CLOUD-SERVER</span>
-            <span>稼働中</span>
-          </div>
-        </div>
-        <div class="divider"></div>
-        <div class="status">稼働状態：通常</div>
-      </div>
-    </div>
-  </div>
+  <!-- DOWNLOAD -->
+  <svg class="hex" viewBox="0 0 300 260">
+    <polygon points="150,10 290,80 290,180 150,250 10,180 10,80" fill="none" stroke="#f5c400" stroke-width="6"/>
+    <text x="150" y="70" class="label mid">通信速度</text>
+    <text x="150" y="110" class="label small">DOWNLOAD</text>
+    <text x="150" y="165" class="value big">121</text>
+    <text x="200" y="165" class="label mid">Mbps</text>
+  </svg>
 
+  <!-- UPLOAD -->
+  <svg class="hex" viewBox="0 0 300 260">
+    <polygon points="150,10 290,80 290,180 150,250 10,180 10,80" fill="none" stroke="#f5c400" stroke-width="6"/>
+    <text x="150" y="70" class="label mid">通信速度</text>
+    <text x="150" y="110" class="label small">UPLOAD</text>
+    <text x="150" y="165" class="value big">35</text>
+    <text x="200" y="165" class="label mid">Mbps</text>
+  </svg>
+
+  <!-- SERVER -->
+  <svg class="hex" viewBox="0 0 300 260">
+    <polygon points="150,10 290,80 290,180 150,250 10,180 10,80" fill="none" stroke="#f5c400" stroke-width="6"/>
+    <text x="150" y="70" class="label mid">サーバー稼働</text>
+    <text x="150" y="125" class="label small">GOJA DENPO-SERVER</text>
+    <text x="150" y="150" class="label small">GOJA CLOUD-SERVER</text>
+    <text x="150" y="205" class="status">稼働中</text>
+  </svg>
 </div>
+</section>
+
+<!-- ===================== B〜J ===================== -->
+<!-- UI思想違いを確認するため、色と構成だけ変えた同構成を量産 -->
+
+<script>
+const types = [
+  {name:"B / タイトル強調型", color:"#4aa3ff", titleSize:"big", valueSize:"mid"},
+  {name:"C / 上下分離型", color:"#5cff7a", titleSize:"mid", valueSize:"big"},
+  {name:"D / 左右分離型", color:"#ff6a6a", titleSize:"mid", valueSize:"mid"},
+  {name:"E / ミニマル", color:"#aaaaaa", titleSize:"small", valueSize:"big"},
+  {name:"F / 線主役", color:"#ffd54a", titleSize:"small", valueSize:"mid"},
+  {name:"G / 情報圧縮", color:"#b084ff", titleSize:"small", valueSize:"small"},
+  {name:"H / 分割完成候補", color:"#00ffd5", titleSize:"mid", valueSize:"big"},
+  {name:"I / 縦耐性", color:"#ff9f40", titleSize:"mid", valueSize:"mid"},
+  {name:"J / 破壊テスト", color:"#ff3cff", titleSize:"big", valueSize:"big"}
+];
+
+document.write(
+types.map(t=>`
+<section style="color:${t.color}">
+<h2>${t.name}</h2>
+<div class="grid">
+${["CPU温度","CPU稼働率","メモリ稼働率","DOWNLOAD","UPLOAD","SERVER"].map(label=>`
+<svg class="hex" viewBox="0 0 300 260">
+<polygon points="150,10 290,80 290,180 150,250 10,180 10,80"
+ fill="none" stroke="${t.color}" stroke-width="6"/>
+<text x="150" y="80" class="label ${t.titleSize}">${label}</text>
+<text x="150" y="160" class="value ${t.valueSize}">
+${label==="SERVER"?"RUN":label==="DOWNLOAD"?121:label==="UPLOAD"?35:label==="CPU温度"?62:label==="CPU稼働率"?45:60}
+</text>
+</svg>
+`).join("")}
+</div>
+</section>
+`).join("")
+);
+</script>
 
 </body>
 </html>
