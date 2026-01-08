@@ -2,31 +2,28 @@
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>GOJA NERV Monitor</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>GOJA NERV MONITOR</title>
 
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@600;700&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
-
-  <!-- 7セグ（DSEG）: 失敗してもOrbitronにフォールバック -->
-  <style>
-    @font-face{
-      font-family: "DSEG7";
-      src: url("https://cdn.jsdelivr.net/gh/keshikan/DSEG@master/fonts/DSEG7Classic-Bold.woff2") format("woff2");
-      font-display: swap;
-    }
-  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800&family=Noto+Serif+JP:wght@700;900&display=swap" rel="stylesheet">
 
   <style>
     :root{
       --bg:#000;
-      --gold:#f4b000;          /* エヴァ寄り黄 */
-      --goldDim: rgba(244,176,0,.55);
-      --whiteDim: rgba(255,255,255,.70);
+      --panel:#070707;
+      --gold:#f2b000;     /* エヴァ寄りの黄 */
+      --gold2:#a97700;
+      --txt:#e8e8e8;
 
-      /* ===== あなたがくれたGOJA TUNER値（固定） ===== */
+      /* ===== 固定サイズ(ここが肝) ===== */
+      --deviceW: 390px;   /* 君のiPhoneに合わせる想定：横幅は固定。 */
+      --card: 360px;      /* 正方形カード(固定) */
+      --pad: 14px;
+
+      /* ===== GOJA TUNER 値（君が送ってくれたやつ） ===== */
       --titleY: 19px;
       --numY: 4px;
       --dashY: -2px;
@@ -37,460 +34,371 @@
       --statusSize: 28px;
 
       --dashW: 220px;
-
-      /* ===== Layout ===== */
-      --pad: 14px;
-      --cardRadius: 22px;
-      --cardH: 178px; /* 縦を詰めつつ数字が入る高さ */
     }
 
-    *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
-    html,body{ height:100%; margin:0; background:var(--bg); color:#fff; }
+    *{ box-sizing:border-box; }
     body{
-      font-feature-settings: "palt" 1;
+      margin:0;
+      background:var(--bg);
+      color:var(--txt);
+      -webkit-font-smoothing: antialiased;
       overflow-x:hidden;
     }
 
-    .app{
-      max-width: 760px;
+    /* ===== 画面は「固定幅」：勝手にフィットさせない ===== */
+    .wrap{
+      width: var(--deviceW);
       margin: 0 auto;
-      padding: calc(14px + env(safe-area-inset-top)) var(--pad) calc(18px + env(safe-area-inset-bottom));
+      padding: 18px 0 40px;
     }
 
-    /* ===== Header ===== */
     .topbar{
+      padding: 10px 18px 14px;
       display:flex;
-      align-items:flex-end;
       justify-content:space-between;
-      gap: 12px;
-      margin-bottom: 14px;
+      align-items:flex-end;
+      gap:12px;
     }
-    .leftTitle{
+    .brand{
+      line-height:1;
+    }
+    .brand .title{
+      font-family:"Noto Serif JP", serif;
+      font-weight:900;
+      letter-spacing: .08em;
+      font-size: 26px;
+    }
+    .brand .sub{
+      margin-top:8px;
+      font-family:"Orbitron", system-ui, sans-serif;
+      letter-spacing:.22em;
+      font-size: 14px;
+      color: rgba(242,176,0,.85);
+    }
+    .clock{
+      font-family:"Orbitron", system-ui, sans-serif;
+      letter-spacing:.12em;
+      font-size: 14px;
+      color: rgba(232,232,232,.55);
+      padding-bottom: 2px;
+      white-space:nowrap;
+    }
+
+    .list{
       display:flex;
       flex-direction:column;
-      gap: 4px;
-    }
-    .host{
-      font-family: "Times New Roman", Times, serif;
-      font-weight: 700;
-      font-size: 18px;
-      letter-spacing: .08em;
-      color: rgba(255,255,255,.88);
-      text-transform: uppercase;
-    }
-    .sub{
-      font-family: "Times New Roman", Times, serif;
-      font-weight: 700;
-      font-size: 12px;
-      letter-spacing: .18em;
-      color: rgba(244,176,0,.70);
-      text-transform: uppercase;
-    }
-    .stamp{
-      text-align:right;
-      font-family: "Times New Roman", Times, serif;
-      font-weight: 700;
-      font-size: 12px;
-      letter-spacing: .18em;
-      color: rgba(255,255,255,.55);
-      text-transform: uppercase;
+      gap: 16px;
+      padding: 0 18px;
     }
 
-    /* ===== Cards grid ===== */
-    .grid{
-      display:grid;
-      grid-template-columns: 1fr;
-      gap: 12px;
-    }
-
-    /* ===== Card base ===== */
+    /* ===== 正方形カード ===== */
     .card{
+      width: var(--card);
+      height: var(--card);
+      background: #050505;
+      border-radius: 22px;
       position: relative;
-      height: var(--cardH);
-      border-radius: var(--cardRadius);
-      background: #000; /* 真っ黒 */
-      overflow: hidden;
+      overflow:hidden;
       box-shadow:
-        0 0 0 1px rgba(255,255,255,.06),
-        0 18px 50px rgba(0,0,0,.65);
+        0 0 0 1px rgba(255,255,255,.05),
+        0 14px 28px rgba(0,0,0,.55);
     }
 
-    /* 外枠 + 内枠（四角のみ） */
+    /* 外枠(太) */
     .card::before{
       content:"";
       position:absolute;
-      inset: 14px;
+      inset: 18px;
+      border: 6px solid rgba(242,176,0,.95);
       border-radius: 18px;
-      border: 5px solid rgba(244,176,0,.98);
       pointer-events:none;
-      filter: drop-shadow(0 0 10px rgba(244,176,0,.12));
+      filter: drop-shadow(0 0 6px rgba(242,176,0,.25));
     }
+
+    /* 内枠(細) */
     .card::after{
       content:"";
       position:absolute;
-      inset: 24px;
+      inset: 36px;
+      border: 3px solid rgba(242,176,0,.45);
       border-radius: 14px;
-      border: 3px solid rgba(244,176,0,.48);
       pointer-events:none;
     }
 
-    /* Content positioning */
-    .title{
+    /* ===== 中のレイヤ ===== */
+    .inner{
       position:absolute;
-      left: 50%;
-      top: 26%;
-      transform: translate(-50%,-50%) translateY(var(--titleY));
-      font-family: "Noto Serif JP","Yu Mincho","Hiragino Mincho ProN",serif;
-      font-weight: 700;
+      inset:0;
+      display:block;
+    }
+
+    .metric-title{
+      position:absolute;
+      left:0; right:0;
+      top: calc(52px + var(--titleY));
+      text-align:center;
+      font-family:"Noto Serif JP", serif;
+      font-weight:900;
+      letter-spacing: .08em;
       font-size: var(--titleSize);
-      letter-spacing: .08em;
-      color: var(--gold);
-      text-shadow: 0 0 10px rgba(244,176,0,.12);
-      white-space: nowrap;
-      user-select:none;
+      color: rgba(242,176,0,.92);
+      text-shadow: 0 0 10px rgba(242,176,0,.18);
+      white-space:nowrap;
     }
 
-    .numRow{
+    .metric-num{
       position:absolute;
-      left:50%;
-      top: 56%;
-      transform: translate(-50%,-50%) translateY(var(--numY));
-      display:flex;
-      align-items: baseline;
-      gap: 10px;
-      white-space: nowrap;
-      user-select:none;
-    }
-
-    .num{
-      font-family: "DSEG7","Orbitron", ui-monospace, SFMono-Regular, Menlo, monospace;
-      font-weight: 700;
+      left:0; right:0;
+      top: calc(120px + var(--numY));
+      text-align:center;
+      font-family:"Orbitron", system-ui, sans-serif;
+      font-weight:800;
       font-size: var(--numSize);
+      letter-spacing: .03em;
+      color: rgba(242,176,0,.98);
       line-height: 1;
-      letter-spacing: .02em;
-      color: var(--gold);
-      text-shadow: 0 0 14px rgba(244,176,0,.10);
-      transition: transform .25s ease, opacity .25s ease;
+      text-shadow: 0 0 14px rgba(242,176,0,.18);
+      white-space:nowrap;
     }
 
-    .unit{
-      font-family: "Times New Roman", Times, serif;
-      font-weight: 700;
-      font-size: 26px;
-      letter-spacing: .08em;
-      color: rgba(255,255,255,.62);
-      transform: translateY(-6px);
+    .metric-unit{
+      position:absolute;
+      top: calc(168px + var(--numY));
+      left: 50%;
+      transform: translateX(calc(var(--dashW) * 0.0 + 92px)); /* 数字の右側に寄せる */
+      font-family:"Orbitron", system-ui, sans-serif;
+      font-size: 20px;
+      font-weight:700;
+      letter-spacing:.08em;
+      color: rgba(232,232,232,.70);
+      white-space:nowrap;
     }
 
     .dash{
       position:absolute;
       left:50%;
-      top: 76%;
-      transform: translate(-50%,-50%) translateY(var(--dashY));
+      top: calc(220px + var(--dashY));
+      transform: translateX(-50%);
       width: var(--dashW);
       height: 0;
-      border-top: 3px dashed rgba(244,176,0,.55);
-      filter: drop-shadow(0 0 6px rgba(244,176,0,.08));
-      user-select:none;
+      border-top: 4px dashed rgba(242,176,0,.35);
+      filter: drop-shadow(0 0 2px rgba(242,176,0,.08));
     }
 
     .status{
       position:absolute;
-      left:50%;
-      top: 86%;
-      transform: translate(-50%,-50%) translateY(var(--statusY));
-      font-family: "Noto Serif JP","Yu Mincho","Hiragino Mincho ProN",serif;
-      font-weight: 700;
+      left:0; right:0;
+      top: calc(244px + var(--statusY));
+      text-align:center;
+      font-family:"Noto Serif JP", serif;
+      font-weight:900;
+      letter-spacing:.12em;
       font-size: var(--statusSize);
-      letter-spacing: .06em;
-      color: rgba(244,176,0,.92);
-      white-space: nowrap;
-      text-shadow: 0 0 10px rgba(244,176,0,.10);
-      user-select:none;
+      color: rgba(242,176,0,.82);
+      white-space:nowrap;
     }
 
-    /* ===== Variants ===== */
-    .unit-small .unit{ font-size: 18px; transform: translateY(-10px); }
-    .unit-none .unit{ display:none; }
+    /* サーバーカード（電報/クラウド分ける） */
+    .server-lines{
+      position:absolute;
+      left:0; right:0;
+      top: calc(108px + var(--numY));
+      text-align:center;
+      font-family:"Orbitron", system-ui, sans-serif;
+      font-weight:800;
+      color: rgba(232,232,232,.78);
+      letter-spacing:.18em;
+      line-height: 1.2;
+    }
+    .server-lines .l1{ font-size: 26px; }
+    .server-lines .l2{ font-size: 20px; margin-top:10px; color: rgba(232,232,232,.65); }
 
-    /* server card: main text 2-line, not big number */
-    .server .numRow{
-      top: 58%;
-      gap: 0;
-      flex-direction: column;
-      align-items: center;
-      transform: translate(-50%,-50%) translateY(var(--numY));
+    .badge{
+      position:absolute;
+      right: 44px;
+      top: 92px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      border: 2px solid rgba(242,176,0,.55);
+      color: rgba(242,176,0,.95);
+      font-family:"Noto Serif JP", serif;
+      font-weight:900;
+      letter-spacing:.18em;
+      font-size: 18px;
+      background: rgba(0,0,0,.35);
+      white-space:nowrap;
     }
-    .server .num{
-      font-family: "Times New Roman", Times, serif;
-      font-weight: 700;
-      font-size: 38px;
-      letter-spacing: .16em;
-      text-transform: uppercase;
-      color: var(--gold);
-    }
-    .server .num.line2{
-      font-size: 28px;
-      letter-spacing: .14em;
-      color: rgba(255,255,255,.78);
-      margin-top: 4px;
-    }
-    .server .unit{ display:none; }
-
-    /* storage card: show USED/TOTAL */
-    .storage .num{
-      font-family: "DSEG7","Orbitron", ui-monospace, SFMono-Regular, Menlo, monospace;
-      font-size: 74px;
-    }
-    .storage .unit{
-      font-size: 16px;
-      transform: translateY(-12px);
-      letter-spacing: .12em;
-      color: rgba(255,255,255,.58);
-    }
-
-    /* speed cards */
-    .speed .title{
-      letter-spacing: .10em;
-    }
-    .speed .status{
-      color: rgba(255,255,255,.58);
-    }
-
-    /* tiny footer spacing */
-    .footerSpace{ height: 4px; }
   </style>
 </head>
 
 <body>
-  <div class="app">
+  <div class="wrap">
     <div class="topbar">
-      <div class="leftTitle">
-        <div class="host">KAZ-RASPI</div>
+      <div class="brand">
+        <div class="title">KAZ-RASPI</div>
         <div class="sub">GOJA NERV MONITOR</div>
       </div>
-      <div class="stamp" id="stamp">—</div>
+      <div class="clock" id="clock">----</div>
     </div>
 
-    <div class="grid">
+    <div class="list" id="list">
       <!-- CPU TEMP -->
-      <div class="card unit-small" id="cardCpuTemp">
-        <div class="title">CPU温度</div>
-        <div class="numRow">
-          <div class="num" id="cpuTemp">58</div>
-          <div class="unit">℃</div>
+      <div class="card">
+        <div class="inner">
+          <div class="metric-title">CPU温度</div>
+          <div class="metric-num" id="cpuTemp">58</div>
+          <div class="metric-unit">℃</div>
+          <div class="dash"></div>
+          <div class="status" id="cpuTempSt">稼働状態：通常</div>
         </div>
-        <div class="dash"></div>
-        <div class="status" id="cpuTempStatus">稼働状態：通常</div>
       </div>
 
       <!-- CPU USAGE -->
-      <div class="card unit-none" id="cardCpuUsage">
-        <div class="title">CPU稼働率</div>
-        <div class="numRow">
-          <div class="num" id="cpuUsage">42</div>
-          <div class="unit">%</div>
+      <div class="card">
+        <div class="inner">
+          <div class="metric-title">CPU稼働率</div>
+          <div class="metric-num" id="cpuUse">41</div>
+          <div class="metric-unit">%</div>
+          <div class="dash"></div>
+          <div class="status" id="cpuUseSt">稼働状態：通常</div>
         </div>
-        <div class="dash"></div>
-        <div class="status" id="cpuUsageStatus">稼働状態：通常</div>
       </div>
 
       <!-- MEM USAGE -->
-      <div class="card unit-none" id="cardMemUsage">
-        <div class="title">メモリ稼働率</div>
-        <div class="numRow">
-          <div class="num" id="memUsage">60</div>
-          <div class="unit">%</div>
+      <div class="card">
+        <div class="inner">
+          <div class="metric-title">メモリ稼働率</div>
+          <div class="metric-num" id="memUse">59</div>
+          <div class="metric-unit">%</div>
+          <div class="dash"></div>
+          <div class="status" id="memUseSt">稼働状態：通常</div>
         </div>
-        <div class="dash"></div>
-        <div class="status" id="memUsageStatus">稼働状態：通常</div>
       </div>
 
-      <!-- SPEED UP -->
-      <div class="card speed unit-small" id="cardUp">
-        <div class="title">通信速度《UPLOAD》</div>
-        <div class="numRow">
-          <div class="num" id="upSpeed">18</div>
-          <div class="unit">Mbps</div>
+      <!-- UPLOAD -->
+      <div class="card">
+        <div class="inner">
+          <div class="metric-title">通信速度《UPLOAD》</div>
+          <div class="metric-num" id="up">46</div>
+          <div class="metric-unit">Mbps</div>
+          <div class="dash"></div>
+          <div class="status" id="upSt">稼働状態：通常</div>
         </div>
-        <div class="dash"></div>
-        <div class="status" id="upStatus">更新：—</div>
       </div>
 
-      <!-- SPEED DOWN -->
-      <div class="card speed unit-small" id="cardDown">
-        <div class="title">通信速度《DOWNLOAD》</div>
-        <div class="numRow">
-          <div class="num" id="downSpeed">92</div>
-          <div class="unit">Mbps</div>
+      <!-- DOWNLOAD -->
+      <div class="card">
+        <div class="inner">
+          <div class="metric-title">通信速度《DOWNLOAD》</div>
+          <div class="metric-num" id="down">121</div>
+          <div class="metric-unit">Mbps</div>
+          <div class="dash"></div>
+          <div class="status" id="downSt">稼働状態：通常</div>
         </div>
-        <div class="dash"></div>
-        <div class="status" id="downStatus">更新：—</div>
       </div>
 
-      <!-- SD CARD -->
-      <div class="card storage unit-small" id="cardSD">
-        <div class="title">SDカード容量</div>
-        <div class="numRow">
-          <div class="num" id="sdUsed">31</div>
-          <div class="unit" id="sdUnit">GB / 64GB</div>
+      <!-- DENPO SERVER -->
+      <div class="card">
+        <div class="inner">
+          <div class="metric-title">サーバー稼働状況</div>
+          <div class="server-lines">
+            <div class="l1">GOJA</div>
+            <div class="l2">DENPO-SERVER</div>
+          </div>
+          <div class="badge" id="denpoBadge">稼働中</div>
+          <div class="dash"></div>
+          <div class="status" id="denpoSt">稼働状態：通常</div>
         </div>
-        <div class="dash"></div>
-        <div class="status" id="sdStatus">稼働状態：通常</div>
       </div>
 
-      <!-- HDD -->
-      <div class="card storage unit-small" id="cardHDD">
-        <div class="title">HDD容量</div>
-        <div class="numRow">
-          <div class="num" id="hddUsed">120</div>
-          <div class="unit" id="hddUnit">GB / 1000GB</div>
+      <!-- CLOUD SERVER -->
+      <div class="card">
+        <div class="inner">
+          <div class="metric-title">サーバー稼働状況</div>
+          <div class="server-lines">
+            <div class="l1">GOJA</div>
+            <div class="l2">CLOUD-SERVER</div>
+          </div>
+          <div class="badge" id="cloudBadge">稼働中</div>
+          <div class="dash"></div>
+          <div class="status" id="cloudSt">稼働状態：通常</div>
         </div>
-        <div class="dash"></div>
-        <div class="status" id="hddStatus">稼働状態：通常</div>
       </div>
-
-      <!-- SERVER: DENPO -->
-      <div class="card server" id="cardDenpo">
-        <div class="title">サーバー稼働</div>
-        <div class="numRow">
-          <div class="num">GOJA</div>
-          <div class="num line2">DENPO-SERVER</div>
-        </div>
-        <div class="dash"></div>
-        <div class="status" id="denpoStatus">稼働中...</div>
-      </div>
-
-      <!-- SERVER: CLOUD -->
-      <div class="card server" id="cardCloud">
-        <div class="title">サーバー稼働</div>
-        <div class="numRow">
-          <div class="num">GOJA</div>
-          <div class="num line2">CLOUD-SERVER</div>
-        </div>
-        <div class="dash"></div>
-        <div class="status" id="cloudStatus">稼働中...</div>
-      </div>
-
-      <div class="footerSpace"></div>
     </div>
   </div>
 
   <script>
-    // ===== 時刻表示 =====
-    function stampNow(){
+    // 時計
+    function pad2(n){ return String(n).padStart(2,"0"); }
+    function tickClock(){
       const d = new Date();
-      const yyyy = d.getFullYear();
-      const mm = String(d.getMonth()+1).padStart(2,"0");
-      const dd = String(d.getDate()).padStart(2,"0");
-      const hh = String(d.getHours()).padStart(2,"0");
-      const mi = String(d.getMinutes()).padStart(2,"0");
-      const ss = String(d.getSeconds()).padStart(2,"0");
-      document.getElementById("stamp").textContent = `${yyyy}.${mm}.${dd}  ${hh}:${mi}:${ss}`;
+      const s = `${d.getFullYear()}.${pad2(d.getMonth()+1)}.${pad2(d.getDate())}  ${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
+      document.getElementById("clock").textContent = s;
     }
-    setInterval(stampNow, 500);
-    stampNow();
+    setInterval(tickClock, 250);
+    tickClock();
 
-    // ===== UI確認用デモ（ゆっくり変動） =====
-    // 後でAPIに差し替えるための形
-    const DEMO = true;
-
-    // 変動が速すぎるの嫌、って言ってたから「ゆっくり」「小刻み」なランダムウォークにしてる
-    const state = {
-      cpuTemp: 58,
-      cpuUsage: 42,
-      memUsage: 60,
-      up: 18,
-      down: 92,
-      sdUsed: 31, sdTotal: 64,
-      hddUsed: 120, hddTotal: 1000,
-      denpo: true,
-      cloud: true
+    // デモ値（後でAPI差し替え）
+    const el = {
+      cpuTemp: document.getElementById("cpuTemp"),
+      cpuTempSt: document.getElementById("cpuTempSt"),
+      cpuUse: document.getElementById("cpuUse"),
+      cpuUseSt: document.getElementById("cpuUseSt"),
+      memUse: document.getElementById("memUse"),
+      memUseSt: document.getElementById("memUseSt"),
+      up: document.getElementById("up"),
+      upSt: document.getElementById("upSt"),
+      down: document.getElementById("down"),
+      downSt: document.getElementById("downSt"),
     };
 
-    function clamp(v, min, max){ return Math.max(min, Math.min(max, v)); }
-
-    function walk(v, step, min, max){
-      const r = (Math.random() - 0.5) * step * 2; // [-step, +step]
-      return clamp(v + r, min, max);
+    function statusBy(val, warn, crit){
+      if(val >= crit) return "稼働状態：警戒";
+      if(val >= warn) return "稼働状態：注意";
+      return "稼働状態：通常";
     }
 
-    function levelStatus(pct){
-      if(pct < 70) return "稼働状態：通常";
-      if(pct < 85) return "稼働状態：注意";
-      return "稼働状態：警戒";
+    let state = {
+      t: 58,
+      cpu: 41,
+      mem: 59,
+      up: 46,
+      down: 121,
+    };
+
+    function step(){
+      // 少しだけ動かす（潰れない確認用）
+      const jig = (a, min, max, s=1) => {
+        a += (Math.random() < 0.5 ? -s : s) * (Math.random() < 0.7 ? 1 : 0);
+        if(a < min) a = min;
+        if(a > max) a = max;
+        return a;
+      };
+
+      state.t = jig(state.t, 40, 85, 1);
+      state.cpu = jig(state.cpu, 0, 100, 2);
+      state.mem = jig(state.mem, 0, 100, 1);
+      state.up = jig(state.up, 1, 200, 3);
+      state.down = jig(state.down, 1, 500, 5);
+
+      el.cpuTemp.textContent = Math.round(state.t);
+      el.cpuTempSt.textContent = statusBy(state.t, 70, 80);
+
+      el.cpuUse.textContent = Math.round(state.cpu);
+      el.cpuUseSt.textContent = statusBy(state.cpu, 70, 90);
+
+      el.memUse.textContent = Math.round(state.mem);
+      el.memUseSt.textContent = statusBy(state.mem, 75, 90);
+
+      el.up.textContent = Math.round(state.up);
+      el.upSt.textContent = "稼働状態：通常";
+
+      el.down.textContent = Math.round(state.down);
+      el.downSt.textContent = "稼働状態：通常";
     }
 
-    function setNum(id, v){
-      const el = document.getElementById(id);
-      if(!el) return;
-      el.style.transform = "scale(1.01)";
-      el.textContent = String(Math.round(v));
-      setTimeout(()=>{ el.style.transform = "scale(1)"; }, 180);
-    }
-
-    function updateUI(){
-      setNum("cpuTemp", state.cpuTemp);
-      document.getElementById("cpuTempStatus").textContent =
-        (state.cpuTemp < 70) ? "稼働状態：通常" : (state.cpuTemp < 80 ? "稼働状態：注意" : "稼働状態：警戒");
-
-      setNum("cpuUsage", state.cpuUsage);
-      document.getElementById("cpuUsageStatus").textContent = levelStatus(state.cpuUsage);
-
-      setNum("memUsage", state.memUsage);
-      document.getElementById("memUsageStatus").textContent = levelStatus(state.memUsage);
-
-      setNum("upSpeed", state.up);
-      setNum("downSpeed", state.down);
-
-      const now = new Date();
-      const t = `${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}:${String(now.getSeconds()).padStart(2,"0")}`;
-      document.getElementById("upStatus").textContent = `更新：${t}`;
-      document.getElementById("downStatus").textContent = `更新：${t}`;
-
-      setNum("sdUsed", state.sdUsed);
-      document.getElementById("sdUnit").textContent = `GB / ${state.sdTotal}GB`;
-      document.getElementById("sdStatus").textContent =
-        (state.sdUsed / state.sdTotal < 0.85) ? "稼働状態：通常" : "稼働状態：注意";
-
-      setNum("hddUsed", state.hddUsed);
-      document.getElementById("hddUnit").textContent = `GB / ${state.hddTotal}GB`;
-      document.getElementById("hddStatus").textContent =
-        (state.hddUsed / state.hddTotal < 0.85) ? "稼働状態：通常" : "稼働状態：注意";
-
-      document.getElementById("denpoStatus").textContent = state.denpo ? "稼働中..." : "停止中...";
-      document.getElementById("cloudStatus").textContent = state.cloud ? "稼働中..." : "停止中...";
-    }
-
-    function tickDemo(){
-      // 温度：0.6℃刻みくらいでゆっくり
-      state.cpuTemp = walk(state.cpuTemp, 0.6, 40, 88);
-
-      // 稼働率：1〜2%刻み
-      state.cpuUsage = walk(state.cpuUsage, 1.4, 0, 100);
-      state.memUsage = walk(state.memUsage, 1.1, 0, 100);
-
-      // 通信速度：少しブレる
-      state.up = walk(state.up, 1.2, 0, 150);
-      state.down = walk(state.down, 2.0, 0, 300);
-
-      // 容量：基本はゆっくり増える（減ることもある程度）
-      state.sdUsed = clamp(state.sdUsed + (Math.random() < 0.60 ? 0.05 : -0.03), 0, state.sdTotal);
-      state.hddUsed = clamp(state.hddUsed + (Math.random() < 0.70 ? 0.18 : -0.10), 0, state.hddTotal);
-
-      updateUI();
-    }
-
-    // ===== ここをAPIに差し替える想定 =====
-    // 例：
-    // fetch("/api/metrics").then(r=>r.json()).then(data=>{ state=...; updateUI(); })
-    if(DEMO){
-      updateUI();
-      setInterval(tickDemo, 1200); // 速すぎない（1.2秒）
-    }else{
-      // TODO: 実データ取得
-      updateUI();
-    }
+    setInterval(step, 1200);
+    step();
   </script>
 </body>
 </html>
