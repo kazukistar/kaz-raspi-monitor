@@ -1,534 +1,514 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8" />
+  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>GOJA Hex Tuner</title>
+  <title>GOJA UI TUNER (Square)</title>
+
+  <!-- Fonts: 数字=デジタル/日本語=明朝寄り -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Noto+Serif+JP:wght@700;900&display=swap" rel="stylesheet">
+
   <style>
     :root{
-      --bg:#000;
-      --card:#0b0b0b;
-      --gold:#f2b000;      /* エヴァ寄りの黄 */
-      --gold2:#9a6f00;     /* 内側線/点線の渋い黄 */
-      --text:#f2b000;
+      /* ===== Theme ===== */
+      --bg: #000000;
+      --gold: #f2b400;            /* エヴァ寄りの黄 */
+      --gold-dim: rgba(242,180,0,.55);
+
+      /* ===== Card sizing ===== */
+      --cardW: min(94vw, 560px);
+      --cardRadius: 28px;
+
+      /* ===== Inner frame sizing ===== */
+      --frameInsetOuter: 18px;
+      --frameInsetInner: 38px;
+      --frameStrokeOuter: 6px;
+      --frameStrokeInner: 4px;
+
+      /* ===== Tunable (defaults) ===== */
+      --titleY: 0px;
+      --numY: 0px;
+      --dashY: 0px;
+      --statusY: 0px;
+
+      --titleSize: 26px;
+      --numSize: 96px;
+      --unitSize: 20px;
+      --statusSize: 22px;
+
+      --dashW: 62%;   /* 点線の長さ（カード幅に対する割合） */
+      --dashThick: 4px;
+      --dashGap: 10px;
     }
 
-    html, body { height:100%; }
+    html, body {
+      height: 100%;
+      margin: 0;
+      background: var(--bg);
+      color: #fff;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
     body{
-      margin:0;
-      background:var(--bg); /* ← 真っ黒 */
-      color:#fff;
-      font-family: system-ui, -apple-system, "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
-      display:flex;
-      justify-content:center;
-      align-items:flex-start;
-      padding: 18px 12px 140px; /* 下にチューナー分の余白 */
-      box-sizing:border-box;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 18px 14px calc(18px + env(safe-area-inset-bottom));
+      gap: 14px;
+      overflow-x: hidden;
     }
 
-    .wrap{
-      width:min(980px, 100%);
-    }
-
-    .card{
-      background: var(--card);
-      border-radius: 22px;
-      padding: 14px 12px 10px;
-      box-shadow: 0 10px 30px rgba(0,0,0,.55);
-    }
-
-    .hexStage{
-      width:100%;
-      display:flex;
-      justify-content:center;
-      align-items:center;
-      overflow:hidden;
-      border-radius: 18px;
-      background: #000; /* hexの背後も黒 */
-    }
-
-    /* SVGは横幅いっぱい */
-    svg{ width:100%; height:auto; display:block; }
-
-    /* 文字の雰囲気（細かい見た目は変えない前提で、最低限だけ） */
-    .glow{
-      filter: drop-shadow(0 0 10px rgba(242,176,0,.12));
-    }
-
-    /* ====== TUNER（スケスケ＆小さめ） ====== */
-    #tuner{
-      position: fixed;
-      left: 10px;
-      right: 10px;
-      bottom: 10px;
-      z-index: 9999;
-
-      /* スケスケ */
-      background: rgba(0,0,0,.26);
-      border: 1px solid rgba(255,255,255,.12);
-      border-radius: 18px;
-      padding: 10px 10px 12px;
-
-      backdrop-filter: blur(6px);
-      -webkit-backdrop-filter: blur(6px);
-
-      color:#fff;
-      box-shadow: 0 10px 40px rgba(0,0,0,.5);
-      font-size: 12px;
-      line-height: 1.35;
-    }
-
-    .tunerHead{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap: 10px;
-      margin-bottom: 8px;
-    }
-    .tunerTitle{
-      font-weight: 700;
-      opacity:.95;
-    }
-    .tunerHead button{
-      border: 1px solid rgba(255,255,255,.18);
-      background: rgba(255,255,255,.06);
-      color:#fff;
-      padding: 6px 10px;
-      border-radius: 12px;
-      font-size: 12px;
-    }
-
+    /* ===== "あなたに伝える" 指示テキスト（見やすい位置） ===== */
     .note{
-      border: 1px solid rgba(255,255,255,.12);
-      background: rgba(0,0,0,.18);
+      width: var(--cardW);
+      max-width: var(--cardW);
+      color: rgba(255,255,255,.78);
+      font-size: 12.5px;
+      line-height: 1.35;
+      letter-spacing: .02em;
+      text-align: left;
+      padding: 10px 12px;
       border-radius: 14px;
-      padding: 8px 10px;
-      margin-bottom: 10px;
-      opacity:.95;
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.08);
     }
-    .note b{ color:#fff; }
+    .note b{ color: #fff; }
 
-    .grid{
-      display:grid;
-      grid-template-columns: 1fr;
-      gap: 8px;
+    /* ===== Card container ===== */
+    .card-wrap{
+      width: var(--cardW);
+      border-radius: var(--cardRadius);
+      background: rgba(255,255,255,.06);
+      padding: 16px;
+      box-shadow:
+        0 18px 50px rgba(0,0,0,.65),
+        inset 0 0 0 1px rgba(255,255,255,.04);
     }
+
+    /* ===== Square card (歪まない) ===== */
+    .card{
+      width: 100%;
+      aspect-ratio: 1 / 1; /* ←ここが“縦長”を殺す */
+      border-radius: calc(var(--cardRadius) - 6px);
+      background: #000;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Outer frame */
+    .card::before{
+      content:"";
+      position:absolute;
+      inset: var(--frameInsetOuter);
+      border-radius: 22px;
+      border: var(--frameStrokeOuter) solid var(--gold);
+      box-shadow: 0 0 0 1px rgba(0,0,0,.35);
+      pointer-events:none;
+    }
+
+    /* Inner frame */
+    .card::after{
+      content:"";
+      position:absolute;
+      inset: var(--frameInsetInner);
+      border-radius: 18px;
+      border: var(--frameStrokeInner) solid rgba(242,180,0,.55);
+      pointer-events:none;
+    }
+
+    /* ===== Content ===== */
+    .title{
+      position:absolute;
+      top: calc(18% + var(--titleY));
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: "Noto Serif JP", serif;
+      font-weight: 900;
+      font-size: var(--titleSize);
+      letter-spacing: .08em;
+      color: var(--gold);
+      text-shadow: 0 2px 10px rgba(242,180,0,.15);
+      white-space: nowrap;
+      user-select:none;
+    }
+
+    .value{
+      position:absolute;
+      top: calc(40% + var(--numY));
+      left: 50%;
+      transform: translateX(-50%);
+      display:flex;
+      align-items: baseline;
+      gap: 10px;
+      user-select:none;
+    }
+    .num{
+      font-family: "Orbitron", system-ui, sans-serif;
+      font-weight: 900;
+      font-size: var(--numSize);
+      letter-spacing: .02em;
+      color: var(--gold);
+      line-height: 1;
+      text-shadow: 0 3px 16px rgba(242,180,0,.12);
+    }
+    .unit{
+      font-family: "Orbitron", system-ui, sans-serif;
+      font-weight: 700;
+      font-size: var(--unitSize);
+      color: rgba(255,255,255,.62);
+      letter-spacing: .05em;
+      transform: translateY(-4px);
+    }
+
+    .dash{
+      position:absolute;
+      top: calc(63% + var(--dashY));
+      left: 50%;
+      transform: translateX(-50%);
+      width: var(--dashW);
+      height: 0;
+      border-top: var(--dashThick) dashed rgba(242,180,0,.35);
+      /* dashの見た目を少し整える */
+      filter: drop-shadow(0 1px 0 rgba(0,0,0,.35));
+      user-select:none;
+    }
+
+    .status{
+      position:absolute;
+      top: calc(71% + var(--statusY));
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: "Noto Serif JP", serif;
+      font-weight: 900;
+      font-size: var(--statusSize);
+      letter-spacing: .10em;
+      color: rgba(242,180,0,.82);
+      white-space: nowrap;
+      user-select:none;
+    }
+
+    /* ===== Bottom control bar (透明・小さめ) ===== */
+    .panel{
+      width: var(--cardW);
+      border-radius: 18px;
+      background: rgba(0,0,0,.25);     /* スケスケ */
+      border: 1px solid rgba(255,255,255,.10);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      overflow: hidden;
+    }
+
+    .panel-head{
+      display:flex;
+      align-items:center;
+      justify-content: space-between;
+      padding: 12px 12px;
+      gap: 10px;
+    }
+
+    .panel-title{
+      font-size: 12.5px;
+      letter-spacing: .04em;
+      color: rgba(255,255,255,.80);
+      user-select:none;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .btn{
+      appearance:none;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(255,255,255,.08);
+      color: rgba(255,255,255,.88);
+      padding: 8px 12px;
+      border-radius: 14px;
+      font-size: 12.5px;
+      letter-spacing: .08em;
+      cursor: pointer;
+      user-select:none;
+    }
+    .btn:active{ transform: translateY(1px); }
+
+    .panel-body{
+      padding: 8px 12px 12px;
+      display: none;
+    }
+    .panel.open .panel-body{ display:block; }
 
     .row{
       display:grid;
-      grid-template-columns: 110px 1fr 54px;
-      gap: 10px;
+      grid-template-columns: 1fr auto;
       align-items:center;
+      gap: 10px;
+      padding: 8px 0;
     }
-    .row .lab{ opacity:.92; }
-    .row .val{ text-align:right; opacity:.9; font-variant-numeric: tabular-nums; }
+    .label{
+      font-size: 12px;
+      color: rgba(255,255,255,.78);
+      letter-spacing: .04em;
+      user-select:none;
+    }
+    .val{
+      font-family: "Orbitron", system-ui, sans-serif;
+      font-size: 11px;
+      color: rgba(255,255,255,.66);
+      letter-spacing: .06em;
+      user-select:none;
+      min-width: 66px;
+      text-align: right;
+    }
 
-    /* range をスケスケに */
     input[type="range"]{
-      -webkit-appearance: none;
-      appearance: none;
       width: 100%;
+      accent-color: var(--gold);
+      height: 28px;
       background: transparent;
-      height: 24px;
-      margin: 0;
-    }
-    input[type="range"]::-webkit-slider-runnable-track{
-      height: 4px;
-      border-radius: 999px;
-      background: rgba(255,255,255,.16);
-      border: 1px solid rgba(255,255,255,.10);
-    }
-    input[type="range"]::-webkit-slider-thumb{
-      -webkit-appearance: none;
-      width: 18px;
-      height: 18px;
-      border-radius: 50%;
-      background: rgba(255,255,255,.78);
-      border: 1px solid rgba(255,255,255,.20);
-      margin-top: -7px;
-      box-shadow: 0 0 0 6px rgba(255,255,255,.06);
-    }
-    input[type="range"]::-moz-range-track{
-      height: 4px;
-      border-radius: 999px;
-      background: rgba(255,255,255,.16);
-      border: 1px solid rgba(255,255,255,.10);
-    }
-    input[type="range"]::-moz-range-thumb{
-      width: 18px;
-      height: 18px;
-      border-radius: 50%;
-      background: rgba(255,255,255,.78);
-      border: 1px solid rgba(255,255,255,.20);
     }
 
-    .btns{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
+    .actions{
+      display:flex;
       gap: 10px;
       margin-top: 10px;
     }
-    .btns button{
-      border: 1px solid rgba(255,255,255,.18);
-      background: rgba(255,255,255,.06);
-      color:#fff;
+    .btn-wide{
+      flex:1;
       padding: 10px 12px;
-      border-radius: 14px;
+      border-radius: 16px;
       font-weight: 700;
     }
-    .btns button:active{ transform: translateY(1px); }
 
-    .collapsed .note,
-    .collapsed .grid,
-    .collapsed .btns{
+    /* ===== Tiny toast ===== */
+    .toast{
+      position: fixed;
+      bottom: calc(14px + env(safe-area-inset-bottom));
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: rgba(0,0,0,.55);
+      border: 1px solid rgba(255,255,255,.12);
+      color: rgba(255,255,255,.9);
+      font-size: 12px;
+      letter-spacing: .06em;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
       display:none;
+      z-index: 9999;
     }
+    .toast.show{ display:block; }
+
+    /* iOS: selection */
+    *{ -webkit-tap-highlight-color: transparent; }
   </style>
 </head>
 
 <body>
-  <div class="wrap">
-    <div class="card">
-      <div class="hexStage">
-        <!-- viewBoxを横長にして、スマホ横幅いっぱいでも「正六角形」が崩れないようにする（SVGで完璧に正六角形） -->
-        <svg id="hexSvg" viewBox="0 0 1000 866" aria-label="hex">
-          <defs>
-            <linearGradient id="goldStroke" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0" stop-color="#f2b000"/>
-              <stop offset="1" stop-color="#d48f00"/>
-            </linearGradient>
-          </defs>
 
-          <!-- 外枠：正六角形（フラットトップ） -->
-          <!-- 角度: 30, 90, 150, 210, 270, 330 度 -->
-          <!-- 外側 r=470 / 内側 r=400 -->
-          <g class="glow">
-            <polygon id="hexOuter"
-              fill="none"
-              stroke="url(#goldStroke)"
-              stroke-width="20"
-              stroke-linejoin="round"
-              points="
-                907.0,433.0
-                735.0,840.0
-                265.0,840.0
-                93.0,433.0
-                265.0,26.0
-                735.0,26.0
-              "/>
+  <div class="note">
+    <b>使い方：</b>下の <b>SHOW</b> → スライダーで位置/サイズ/点線長さを合わせる → <b>COPY</b> を押して値を送ってくれ。<br>
+    （※背景は真っ黒固定。カードは正方形＝歪まない。）
+  </div>
 
-            <polygon id="hexInner"
-              fill="none"
-              stroke="rgba(242,176,0,.55)"
-              stroke-width="10"
-              stroke-linejoin="round"
-              points="
-                846.4,433.0
-                700.0,779.4
-                300.0,779.4
-                153.6,433.0
-                300.0,86.6
-                700.0,86.6
-              "/>
-          </g>
+  <div class="card-wrap">
+    <div class="card" id="card">
+      <div class="title" id="title">メモリ稼働率</div>
 
-          <!-- 題目 -->
-          <text id="tTitle"
-            x="500" y="210"
-            text-anchor="middle"
-            fill="var(--text)"
-            font-family="serif"
-            font-weight="800"
-            font-size="54"
-            letter-spacing="1"
-          >メモリ稼働率</text>
-
-          <!-- 数字 -->
-          <text id="tNumber"
-            x="500" y="400"
-            text-anchor="middle"
-            fill="var(--text)"
-            font-family="system-ui, -apple-system, sans-serif"
-            font-weight="800"
-            font-size="170"
-          >60</text>
-
-          <!-- 単位 -->
-          <text id="tUnit"
-            x="665" y="410"
-            text-anchor="start"
-            fill="rgba(255,255,255,.65)"
-            font-family="system-ui, -apple-system, sans-serif"
-            font-weight="700"
-            font-size="38"
-          >%</text>
-
-          <!-- 点線（長さスライダーで変える） -->
-          <line id="dash"
-            x1="280" y1="535"
-            x2="720" y2="535"
-            stroke="rgba(242,176,0,.45)"
-            stroke-width="6"
-            stroke-linecap="round"
-            stroke-dasharray="18 16"
-          />
-
-          <!-- 稼働状態 -->
-          <text id="tStatus"
-            x="500" y="610"
-            text-anchor="middle"
-            fill="rgba(242,176,0,.82)"
-            font-family="serif"
-            font-weight="800"
-            font-size="46"
-            letter-spacing="1"
-          >稼働状態：通常</text>
-        </svg>
+      <div class="value" id="value">
+        <div class="num" id="num">60</div>
+        <div class="unit" id="unit">%</div>
       </div>
+
+      <div class="dash" id="dash"></div>
+
+      <div class="status" id="status">稼働状態：通常</div>
     </div>
   </div>
 
-  <!-- ===== tuner ===== -->
-  <div id="tuner">
-    <div class="tunerHead">
-      <div class="tunerTitle">位置調整（縦）＋文字サイズ＋点線長さ</div>
-      <button id="toggleBtn" type="button">HIDE</button>
+  <div class="panel" id="panel">
+    <div class="panel-head">
+      <div class="panel-title">位置調整（縦）＋文字サイズ＋点線長さ</div>
+      <button class="btn" id="toggleBtn">SHOW</button>
     </div>
 
-    <div class="note">
-      <b>あなたに贈る為の言葉：</b><br/>
-      スライダーで「場所」と「サイズ」と「点線長さ」を決めたら、<b>COPY</b>を押して出た数値をそのまま俺に貼って。
-    </div>
+    <div class="panel-body">
 
-    <div class="grid">
-      <!-- 縦位置 -->
+      <!-- ===== Y offsets ===== -->
       <div class="row">
-        <div class="lab">題目Y</div>
-        <input id="sTitleY" type="range" min="-200" max="200" value="0" />
-        <div class="val" id="vTitleY">0px</div>
+        <div class="label">題目 Y（px）</div><div class="val" id="vTitleY">0</div>
       </div>
+      <input id="sTitleY" type="range" min="-120" max="120" value="0" />
 
       <div class="row">
-        <div class="lab">数字Y</div>
-        <input id="sNumberY" type="range" min="-200" max="200" value="0" />
-        <div class="val" id="vNumberY">0px</div>
+        <div class="label">数字 Y（px）</div><div class="val" id="vNumY">0</div>
       </div>
+      <input id="sNumY" type="range" min="-140" max="140" value="0" />
 
       <div class="row">
-        <div class="lab">点線Y</div>
-        <input id="sDashY" type="range" min="-200" max="200" value="0" />
-        <div class="val" id="vDashY">0px</div>
+        <div class="label">点線 Y（px）</div><div class="val" id="vDashY">0</div>
       </div>
+      <input id="sDashY" type="range" min="-140" max="140" value="0" />
 
       <div class="row">
-        <div class="lab">稼働状態Y</div>
-        <input id="sStatusY" type="range" min="-200" max="200" value="0" />
-        <div class="val" id="vStatusY">0px</div>
+        <div class="label">稼働状態 Y（px）</div><div class="val" id="vStatusY">0</div>
       </div>
+      <input id="sStatusY" type="range" min="-140" max="140" value="0" />
 
-      <!-- 文字サイズ -->
+      <!-- ===== Font sizes ===== -->
       <div class="row">
-        <div class="lab">題目サイズ</div>
-        <input id="sTitleSize" type="range" min="24" max="90" value="54" />
-        <div class="val" id="vTitleSize">54</div>
+        <div class="label">題目 サイズ（px）</div><div class="val" id="vTitleSize">26</div>
       </div>
+      <input id="sTitleSize" type="range" min="14" max="44" value="26" />
 
       <div class="row">
-        <div class="lab">数字サイズ</div>
-        <input id="sNumberSize" type="range" min="80" max="240" value="170" />
-        <div class="val" id="vNumberSize">170</div>
+        <div class="label">数字 サイズ（px）</div><div class="val" id="vNumSize">96</div>
       </div>
+      <input id="sNumSize" type="range" min="54" max="140" value="96" />
 
       <div class="row">
-        <div class="lab">単位サイズ</div>
-        <input id="sUnitSize" type="range" min="18" max="70" value="38" />
-        <div class="val" id="vUnitSize">38</div>
+        <div class="label">単位 サイズ（px）</div><div class="val" id="vUnitSize">20</div>
       </div>
+      <input id="sUnitSize" type="range" min="12" max="34" value="20" />
 
       <div class="row">
-        <div class="lab">稼働状態サイズ</div>
-        <input id="sStatusSize" type="range" min="22" max="80" value="46" />
-        <div class="val" id="vStatusSize">46</div>
+        <div class="label">稼働状態 サイズ（px）</div><div class="val" id="vStatusSize">22</div>
       </div>
+      <input id="sStatusSize" type="range" min="12" max="36" value="22" />
 
-      <!-- 点線長さ -->
+      <!-- ===== Dash length ===== -->
       <div class="row">
-        <div class="lab">点線長さ</div>
-        <input id="sDashLen" type="range" min="200" max="760" value="440" />
-        <div class="val" id="vDashLen">440</div>
+        <div class="label">点線 長さ（%）</div><div class="val" id="vDashW">62%</div>
       </div>
-    </div>
+      <input id="sDashW" type="range" min="30" max="92" value="62" />
 
-    <div class="btns">
-      <button id="copyBtn" type="button">COPY</button>
-      <button id="resetBtn" type="button">RESET</button>
+      <div class="actions">
+        <button class="btn btn-wide" id="copyBtn">COPY</button>
+        <button class="btn btn-wide" id="resetBtn">RESET</button>
+      </div>
+
     </div>
   </div>
+
+  <div class="toast" id="toast">コピーした</div>
 
   <script>
-    // ===== base positions（viewBox基準）=====
-    const base = {
-      titleY: 210,
-      numberY: 400,
-      dashY: 535,
-      statusY: 610,
-      titleSize: 54,
-      numberSize: 170,
-      unitSize: 38,
-      statusSize: 46,
-      dashLen: 440
+    const root = document.documentElement;
+
+    const panel = document.getElementById("panel");
+    const toggleBtn = document.getElementById("toggleBtn");
+
+    toggleBtn.addEventListener("click", () => {
+      const open = panel.classList.toggle("open");
+      toggleBtn.textContent = open ? "HIDE" : "SHOW";
+    });
+
+    const DEFAULTS = {
+      titleY: 0, numY: 0, dashY: 0, statusY: 0,
+      titleSize: 26, numSize: 96, unitSize: 20, statusSize: 22,
+      dashW: 62
     };
 
-    // ===== elements =====
-    const tTitle  = document.getElementById("tTitle");
-    const tNumber = document.getElementById("tNumber");
-    const tUnit   = document.getElementById("tUnit");
-    const dash    = document.getElementById("dash");
-    const tStatus = document.getElementById("tStatus");
+    const binds = [
+      {slider:"sTitleY",   out:"vTitleY",   css:"--titleY",   unit:"px"},
+      {slider:"sNumY",     out:"vNumY",     css:"--numY",     unit:"px"},
+      {slider:"sDashY",    out:"vDashY",    css:"--dashY",    unit:"px"},
+      {slider:"sStatusY",  out:"vStatusY",  css:"--statusY",  unit:"px"},
 
-    // sliders
-    const sTitleY     = document.getElementById("sTitleY");
-    const sNumberY    = document.getElementById("sNumberY");
-    const sDashY      = document.getElementById("sDashY");
-    const sStatusY    = document.getElementById("sStatusY");
+      {slider:"sTitleSize",  out:"vTitleSize",  css:"--titleSize",  unit:"px"},
+      {slider:"sNumSize",    out:"vNumSize",    css:"--numSize",    unit:"px"},
+      {slider:"sUnitSize",   out:"vUnitSize",   css:"--unitSize",   unit:"px"},
+      {slider:"sStatusSize", out:"vStatusSize", css:"--statusSize", unit:"px"},
 
-    const sTitleSize  = document.getElementById("sTitleSize");
-    const sNumberSize = document.getElementById("sNumberSize");
-    const sUnitSize   = document.getElementById("sUnitSize");
-    const sStatusSize = document.getElementById("sStatusSize");
+      {slider:"sDashW",    out:"vDashW",    css:"--dashW",    unit:"%"},
+    ];
 
-    const sDashLen    = document.getElementById("sDashLen");
-
-    // value labels
-    const vTitleY     = document.getElementById("vTitleY");
-    const vNumberY    = document.getElementById("vNumberY");
-    const vDashY      = document.getElementById("vDashY");
-    const vStatusY    = document.getElementById("vStatusY");
-
-    const vTitleSize  = document.getElementById("vTitleSize");
-    const vNumberSize = document.getElementById("vNumberSize");
-    const vUnitSize   = document.getElementById("vUnitSize");
-    const vStatusSize = document.getElementById("vStatusSize");
-
-    const vDashLen    = document.getElementById("vDashLen");
-
-    function apply(){
-      const dyTitle  = parseInt(sTitleY.value, 10);
-      const dyNum    = parseInt(sNumberY.value,10);
-      const dyDash   = parseInt(sDashY.value, 10);
-      const dyStatus = parseInt(sStatusY.value,10);
-
-      const fsTitle  = parseInt(sTitleSize.value,10);
-      const fsNum    = parseInt(sNumberSize.value,10);
-      const fsUnit   = parseInt(sUnitSize.value,10);
-      const fsStatus = parseInt(sStatusSize.value,10);
-
-      const dashLen  = parseInt(sDashLen.value,10);
-
-      // y update
-      tTitle.setAttribute("y",  base.titleY  + dyTitle);
-      tNumber.setAttribute("y", base.numberY + dyNum);
-
-      // unit is tied to number: small offset so it feels aligned
-      tUnit.setAttribute("y", (base.numberY + dyNum) + 10);
-
-      dash.setAttribute("y1", base.dashY + dyDash);
-      dash.setAttribute("y2", base.dashY + dyDash);
-
-      tStatus.setAttribute("y", base.statusY + dyStatus);
-
-      // font sizes
-      tTitle.setAttribute("font-size", fsTitle);
-      tNumber.setAttribute("font-size", fsNum);
-      tUnit.setAttribute("font-size", fsUnit);
-      tStatus.setAttribute("font-size", fsStatus);
-
-      // dash length: centered around x=500
-      const x1 = 500 - dashLen/2;
-      const x2 = 500 + dashLen/2;
-      dash.setAttribute("x1", x1);
-      dash.setAttribute("x2", x2);
-
-      // labels
-      vTitleY.textContent   = dyTitle + "px";
-      vNumberY.textContent  = dyNum + "px";
-      vDashY.textContent    = dyDash + "px";
-      vStatusY.textContent  = dyStatus + "px";
-
-      vTitleSize.textContent  = fsTitle;
-      vNumberSize.textContent = fsNum;
-      vUnitSize.textContent   = fsUnit;
-      vStatusSize.textContent = fsStatus;
-
-      vDashLen.textContent    = dashLen;
+    function setVar(varName, value, unit){
+      root.style.setProperty(varName, `${value}${unit}`);
     }
 
-    // init
-    apply();
+    function init(){
+      // set defaults
+      for(const b of binds){
+        const s = document.getElementById(b.slider);
+        const o = document.getElementById(b.out);
+        const key = b.css.replace("--","");
 
-    // listeners
-    [
-      sTitleY, sNumberY, sDashY, sStatusY,
-      sTitleSize, sNumberSize, sUnitSize, sStatusSize,
-      sDashLen
-    ].forEach(el => el.addEventListener("input", apply));
+        const dv = DEFAULTS[key];
+        s.value = dv;
+        if(b.unit === "%"){
+          o.textContent = `${dv}%`;
+          setVar(b.css, dv, "%");
+        }else{
+          o.textContent = `${dv}`;
+          setVar(b.css, dv, "px");
+        }
 
-    // COPY / RESET
+        s.addEventListener("input", () => {
+          const v = Number(s.value);
+          if(b.unit === "%"){
+            o.textContent = `${v}%`;
+            setVar(b.css, v, "%");
+          }else{
+            o.textContent = `${v}`;
+            setVar(b.css, v, "px");
+          }
+        });
+      }
+    }
+
+    const toast = document.getElementById("toast");
+    function showToast(msg){
+      toast.textContent = msg;
+      toast.classList.add("show");
+      clearTimeout(showToast._t);
+      showToast._t = setTimeout(()=>toast.classList.remove("show"), 900);
+    }
+
     document.getElementById("copyBtn").addEventListener("click", async () => {
+      const get = (id) => Number(document.getElementById(id).value);
+
       const payload = {
-        titleY: parseInt(sTitleY.value,10),
-        numberY: parseInt(sNumberY.value,10),
-        dashY: parseInt(sDashY.value,10),
-        statusY: parseInt(sStatusY.value,10),
-
-        titleSize: parseInt(sTitleSize.value,10),
-        numberSize: parseInt(sNumberSize.value,10),
-        unitSize: parseInt(sUnitSize.value,10),
-        statusSize: parseInt(sStatusSize.value,10),
-
-        dashLen: parseInt(sDashLen.value,10)
+        titleY: get("sTitleY"),
+        numY: get("sNumY"),
+        dashY: get("sDashY"),
+        statusY: get("sStatusY"),
+        titleSize: get("sTitleSize"),
+        numSize: get("sNumSize"),
+        unitSize: get("sUnitSize"),
+        statusSize: get("sStatusSize"),
+        dashW: get("sDashW")
       };
 
-      const text = JSON.stringify(payload, null, 2);
-
       try{
-        await navigator.clipboard.writeText(text);
-        alert("コピーした。これをそのまま貼って。");
+        await navigator.clipboard.writeText(JSON.stringify(payload, null, 2));
+        showToast("コピーした（JSON）");
       }catch(e){
-        // iOSでclipboardがダメな場合の退避
+        // fallback
         const ta = document.createElement("textarea");
-        ta.value = text;
+        ta.value = JSON.stringify(payload, null, 2);
         document.body.appendChild(ta);
         ta.select();
         document.execCommand("copy");
-        document.body.removeChild(ta);
-        alert("コピーした（fallback）。これをそのまま貼って。");
+        ta.remove();
+        showToast("コピーした（fallback）");
       }
     });
 
     document.getElementById("resetBtn").addEventListener("click", () => {
-      sTitleY.value = 0;
-      sNumberY.value = 0;
-      sDashY.value = 0;
-      sStatusY.value = 0;
-
-      sTitleSize.value = base.titleSize;
-      sNumberSize.value = base.numberSize;
-      sUnitSize.value = base.unitSize;
-      sStatusSize.value = base.statusSize;
-
-      sDashLen.value = base.dashLen;
-
-      apply();
+      for(const b of binds){
+        const s = document.getElementById(b.slider);
+        const key = b.css.replace("--","");
+        s.value = DEFAULTS[key];
+        s.dispatchEvent(new Event("input"));
+      }
+      showToast("リセットした");
     });
 
-    // HIDE toggle
-    const tuner = document.getElementById("tuner");
-    const toggleBtn = document.getElementById("toggleBtn");
-    toggleBtn.addEventListener("click", () => {
-      tuner.classList.toggle("collapsed");
-      toggleBtn.textContent = tuner.classList.contains("collapsed") ? "SHOW" : "HIDE";
-    });
+    init();
   </script>
 </body>
 </html>
