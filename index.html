@@ -15,7 +15,10 @@
       /* ===== GOJA TUNER (共通) ===== */
       --titleY: 19px;
       --numY: 4px;
+
       --unitY: 0px;
+      --unitX: 120px;   /* ★ 単位の横位置（右すぎ調整） */
+
       --dashY: -2px;
       --statusY: -10px;
 
@@ -27,6 +30,9 @@
       --statusSize: 28px;
 
       --dashW: 220px;
+
+      /* ★ 通信速度だけ題目Yを独立 */
+      --netTitleY: 0px;
 
       /* ===== 追加TUNER ===== */
       --cardSize: 340px;      /* 正方形 */
@@ -185,7 +191,7 @@
       position:absolute;
       left: 50%;
       top: calc(190px + var(--numY) + var(--unitY));
-      transform: translateX(120px); /* 右側固定（今は調整用） */
+      transform: translateX(var(--unitX)); /* ★ 右側距離を可変 */
       font-family: "Orbitron", system-ui, sans-serif;
       font-weight: 700;
       font-size: calc(var(--numSize) * var(--unitScale));
@@ -220,7 +226,10 @@
     }
 
     /* ===== 通信速度：タイトル2行 ===== */
-    .card--net .metric-title{ line-height: 1.05; }
+    .card--net .metric-title{
+      line-height: 1.05;
+      top: calc(46px + var(--titleY) + var(--netTitleY)); /* ★ 通信だけ題目Y */
+    }
     .card--net .metric-title .sub{
       display:block;
       margin-top: var(--netSubGap);
@@ -284,9 +293,7 @@
       pointer-events:none;
       line-height: 1.0;
     }
-    .server-lines span{
-      display:block;
-    }
+    .server-lines span{ display:block; }
     .server-lines .l1{ margin-bottom: var(--serverLineGap); }
     .server-lines .l2{ margin-bottom: var(--serverLineGap); letter-spacing: .26em; }
     .server-lines .l3{ font-weight: 700; letter-spacing: .28em; color: rgba(220,220,220,.72); }
@@ -547,6 +554,16 @@
       </div>
       <div class="val" id="v_unitY"></div>
     </div>
+
+    <!-- ★ 追加：単位X -->
+    <div class="row">
+      <div>
+        <div class="name">単位X（右すぎ調整）</div>
+        <input type="range" id="unitX" min="-40" max="220" step="1">
+      </div>
+      <div class="val" id="v_unitX"></div>
+    </div>
+
     <div class="row">
       <div>
         <div class="name">点線Y</div>
@@ -560,6 +577,15 @@
         <input type="range" id="statusY" min="-120" max="120" step="1">
       </div>
       <div class="val" id="v_statusY"></div>
+    </div>
+
+    <!-- ★ 追加：通信速度だけ題目Y -->
+    <div class="row">
+      <div>
+        <div class="name">通信速度 題目Y（通信だけ）</div>
+        <input type="range" id="netTitleY" min="-60" max="60" step="1">
+      </div>
+      <div class="val" id="v_netTitleY"></div>
     </div>
 
     <h3>COMMON (サイズ)</h3>
@@ -696,11 +722,22 @@
   <script>
     // ===== defaults =====
     const defaults = {
-      titleY: 19, numY: 4, unitY: 0, dashY: -2, statusY: -10,
+      titleY: 19, numY: 4,
+
+      unitY: 0,
+      unitX: 120,        // ★ 追加
+
+      dashY: -2, statusY: -10,
+
       titleSize: 33, numSize: 112,
-      unitScale: 0.23,      // ★ unitはnumに連動
+
+      unitScale: 0.23,   // ★ unitはnumに連動
       statusSize: 28,
-      dashW: 220, cardSize: 340, cardGap: 22,
+
+      dashW: 220,
+      netTitleY: 0,      // ★ 追加
+
+      cardSize: 340, cardGap: 22,
       serverBadgeY: 118, serverLinesY: 132, serverLinesSize: 28, serverLineGap: 8,
       netSubSize: 18, netSubGap: 6,
       srvSubSize: 22, srvSubGap: 6,
@@ -794,7 +831,7 @@
 
     // ===== bind sliders =====
     [
-      "titleY","numY","unitY","dashY","statusY",
+      "titleY","numY","unitY","unitX","dashY","statusY","netTitleY",
       "titleSize","numSize","statusSize",
       "dashW","cardSize","cardGap",
       "serverBadgeY","serverLinesY","serverLinesSize","serverLineGap",
