@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>GOJA UI Position Tuner (Square)</title>
+  <title>GOJA UI Tuner (Square +/−)</title>
 
   <!-- Fonts（数字=デジタル寄り / 日本語=明朝寄り） -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -15,7 +15,7 @@
       --bg:#000;
       --gold:#f4b000;
 
-      /* 初期値（スライダーで更新） */
+      /* 調整対象（JSで更新） */
       --titleY: 0px;
       --numY: 0px;
       --dashY: 0px;
@@ -26,82 +26,64 @@
       --statusSize: 20px;
 
       --dashW: 220px;
-
-      /* 四角枠の角丸 */
-      --boxRadius: 18px;
     }
 
-    *{ box-sizing:border-box; }
-    html,body{
-      height:100%;
-      background:var(--bg);
-      color:#fff;
-      margin:0;
-      -webkit-text-size-adjust: 100%;
+    *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+    html,body{ height:100%; margin:0; background:var(--bg); color:#fff; }
+
+    body{
+      display:flex;
+      justify-content:center;
+      align-items:flex-start;
+      padding: 20px 14px 160px;
       font-feature-settings: "palt" 1;
     }
 
-    .wrap{
-      min-height: 100%;
-      padding: 24px 16px 120px;
-      display:flex;
-      align-items:flex-start;
-      justify-content:center;
-    }
+    .wrap{ width:min(560px, 100%); }
 
-    /* ===== カード（正方形固定で“縦長”防止） ===== */
     .card{
-      width: min(92vw, 560px);
-      aspect-ratio: 1 / 1;
-      background: #000; /* 背景は真っ黒 */
+      width:100%;
+      aspect-ratio: 1 / 1;           /* ←縦長防止 */
+      background:#000;               /* ←背景は真っ黒 */
       border-radius: 22px;
       position: relative;
-      overflow: hidden;
-      box-shadow: 0 0 0 1px rgba(255,255,255,0.06), 0 20px 60px rgba(0,0,0,0.55);
+      overflow:hidden;
+      box-shadow: 0 0 0 1px rgba(255,255,255,.06), 0 20px 60px rgba(0,0,0,.55);
+      margin-bottom: 14px;
     }
 
-    /* 四角枠SVG */
-    .frame{
-      position:absolute;
-      inset: 0;
-      display:block;
-      width:100%;
-      height:100%;
+    /* 四角枠（外枠+内枠）※六角形は一切なし */
+    svg.frame{
+      position:absolute; inset:0;
+      width:100%; height:100%;
       pointer-events:none;
-      filter: drop-shadow(0 0 12px rgba(244,176,0,0.18));
+      filter: drop-shadow(0 0 12px rgba(244,176,0,.18));
     }
 
-    /* テキストレイヤ */
-    .layer{
-      position:absolute;
-      inset:0;
-      pointer-events:none;
-    }
+    .layer{ position:absolute; inset:0; pointer-events:none; }
 
     .title{
       position:absolute;
       left:50%;
-      top: 20%;
+      top:20%;
       transform: translate(-50%,-50%) translateY(var(--titleY));
       font-family: "Noto Serif JP","Yu Mincho","Hiragino Mincho ProN",serif;
       font-weight: 700;
       font-size: var(--titleSize);
-      letter-spacing: 0.08em;
+      letter-spacing: .08em;
       color: var(--gold);
-      text-shadow: 0 0 10px rgba(244,176,0,0.12);
+      text-shadow: 0 0 10px rgba(244,176,0,.12);
       white-space: nowrap;
     }
 
     .numRow{
       position:absolute;
       left:50%;
-      top: 44%;
+      top:44%;
       transform: translate(-50%,-50%) translateY(var(--numY));
       display:flex;
       align-items: baseline;
       gap: 10px;
-      color: var(--gold);
-      text-shadow: 0 0 14px rgba(244,176,0,0.12);
       white-space: nowrap;
     }
 
@@ -110,147 +92,167 @@
       font-weight: 700;
       font-size: var(--numSize);
       line-height: 1;
-      letter-spacing: 0.02em;
+      letter-spacing: .02em;
+      color: var(--gold);
+      text-shadow: 0 0 14px rgba(244,176,0,.12);
     }
 
     .unit{
       font-family: "Orbitron", ui-monospace, SFMono-Regular, Menlo, monospace;
       font-weight: 600;
       font-size: calc(var(--numSize) * 0.28);
-      opacity: 0.85;
+      opacity: .85;
+      color: rgba(255,255,255,.62);
     }
 
     .dash{
       position:absolute;
       left:50%;
-      top: 64%;
+      top:64%;
       transform: translate(-50%,-50%) translateY(var(--dashY));
       width: var(--dashW);
       height: 0;
-      border-top: 3px dashed rgba(244,176,0,0.55);
-      filter: drop-shadow(0 0 6px rgba(244,176,0,0.10));
+      border-top: 3px dashed rgba(244,176,0,.55);
+      filter: drop-shadow(0 0 6px rgba(244,176,0,.10));
     }
 
     .status{
       position:absolute;
       left:50%;
-      top: 76%;
+      top:76%;
       transform: translate(-50%,-50%) translateY(var(--statusY));
       font-family: "Noto Serif JP","Yu Mincho","Hiragino Mincho ProN",serif;
       font-weight: 700;
       font-size: var(--statusSize);
-      letter-spacing: 0.06em;
-      color: rgba(244,176,0,0.92);
+      letter-spacing: .06em;
+      color: rgba(244,176,0,.92);
       white-space: nowrap;
-      text-shadow: 0 0 10px rgba(244,176,0,0.10);
+      text-shadow: 0 0 10px rgba(244,176,0,.10);
     }
 
-    /* ===== コントロール（透ける・固定・スクロール可） ===== */
+    /* ===== Control panel (スケスケ) ===== */
     .panel{
       position: fixed;
       left: 12px;
       right: 12px;
       bottom: calc(12px + env(safe-area-inset-bottom));
+      max-width: 760px;
+      margin: 0 auto;
       border-radius: 18px;
-      background: rgba(0,0,0,0.28);          /* スケスケ */
-      border: 1px solid rgba(255,255,255,0.12);
-      box-shadow: 0 16px 40px rgba(0,0,0,0.55);
+      background: rgba(0,0,0,.28);
+      border: 1px solid rgba(255,255,255,.12);
+      box-shadow: 0 16px 40px rgba(0,0,0,.55);
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
       overflow: hidden;
-      max-width: 760px;
-      margin: 0 auto;
+      color: rgba(255,255,255,.92);
+      font-family: system-ui, -apple-system, "SF Pro Display", sans-serif;
     }
 
     .panelHeader{
       display:flex;
       align-items:center;
       justify-content:space-between;
-      gap: 10px;
+      gap:10px;
       padding: 10px 12px;
     }
 
     .panelTitle{
-      font-family: system-ui, -apple-system, "SF Pro Display", sans-serif;
       font-weight: 650;
       font-size: 14px;
-      color: rgba(255,255,255,0.92);
-      letter-spacing: 0.02em;
+      letter-spacing: .02em;
     }
-
     .panelHint{
-      font-family: system-ui, -apple-system, "SF Pro Display", sans-serif;
-      font-size: 12px;
-      color: rgba(255,255,255,0.75);
       margin-top: 2px;
+      font-size: 12px;
+      color: rgba(255,255,255,.75);
     }
 
     .btn{
       appearance:none;
-      border: 1px solid rgba(255,255,255,0.18);
-      background: rgba(255,255,255,0.06);
-      color: rgba(255,255,255,0.92);
+      border: 1px solid rgba(255,255,255,.18);
+      background: rgba(255,255,255,.06);
+      color: rgba(255,255,255,.92);
       padding: 8px 12px;
       border-radius: 14px;
       font-weight: 650;
       font-size: 12px;
-      letter-spacing: 0.02em;
     }
     .btn:active{ transform: translateY(1px); }
 
     .panelBody{
+      display:none;
       padding: 10px 12px 12px;
-      display: none;
-      max-height: 42vh;          /* ここがスクロール領域 */
-      overflow: auto;
+      max-height: 46vh;
+      overflow:auto;
       -webkit-overflow-scrolling: touch;
-      touch-action: pan-y;       /* パネル内は縦スクロールOK */
-    }
-
-    .grid{
-      display:grid;
-      grid-template-columns: 1fr;
-      gap: 12px;
+      touch-action: pan-y;
     }
 
     .row{
-      padding: 10px 10px;
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.08);
       border-radius: 14px;
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.08);
+      padding: 10px;
+      margin-bottom: 10px;
     }
 
-    .labelLine{
+    .rowTop{
       display:flex;
-      align-items:baseline;
+      align-items:center;
       justify-content:space-between;
-      gap: 10px;
-      margin-bottom: 8px;
+      gap:10px;
+      margin-bottom: 10px;
     }
 
     .label{
-      font-family: system-ui, -apple-system, "SF Pro Display", sans-serif;
       font-size: 13px;
       font-weight: 650;
-      color: rgba(255,255,255,0.92);
     }
 
-    .val{
+    .value{
       font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
       font-size: 12px;
-      color: rgba(255,255,255,0.75);
+      color: rgba(255,255,255,.75);
+      min-width: 92px;
+      text-align:right;
     }
 
-    input[type="range"]{
-      width: 100%;
-      accent-color: var(--gold);
-      height: 28px;
-      background: transparent;
+    .stepper{
+      display:grid;
+      grid-template-columns: 56px 1fr 56px;
+      gap: 10px;
+      align-items:center;
+    }
 
-      /* ★iOS/LINEで縦スクロールに吸われない */
-      touch-action: pan-x; /* 横ドラッグだけ許可 */
-      -webkit-user-select: none;
-      user-select: none;
+    .stepBtn{
+      appearance:none;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(255,255,255,.08);
+      color: rgba(255,255,255,.92);
+      height: 44px;
+      border-radius: 14px;
+      font-size: 18px;
+      font-weight: 800;
+      line-height: 1;
+      user-select:none;
+      touch-action: manipulation;
+    }
+    .stepBtn:active{ transform: translateY(1px); }
+
+    .stepMid{
+      height: 44px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.18);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 13px;
+      color: rgba(255,255,255,.80);
+      letter-spacing: .02em;
+      user-select:none;
     }
 
     .actions{
@@ -263,21 +265,21 @@
       padding: 12px 12px;
       border-radius: 16px;
       font-size: 13px;
+      font-weight: 700;
     }
 
     .toast{
       position: fixed;
       left: 50%;
-      bottom: calc(90px + env(safe-area-inset-bottom));
+      bottom: calc(92px + env(safe-area-inset-bottom));
       transform: translateX(-50%);
       padding: 10px 14px;
-      background: rgba(0,0,0,0.65);
-      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(0,0,0,.65);
+      border: 1px solid rgba(255,255,255,.14);
       border-radius: 999px;
-      color: rgba(255,255,255,0.92);
-      font-family: system-ui, -apple-system, "SF Pro Display", sans-serif;
-      font-weight: 650;
+      color: rgba(255,255,255,.92);
       font-size: 13px;
+      font-weight: 650;
       display:none;
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
@@ -289,127 +291,119 @@
 
 <body>
   <div class="wrap">
-    <div class="card" id="card">
-
-      <!-- 四角（外枠+内枠） -->
+    <div class="card">
+      <!-- 四角枠（外枠+内枠） -->
       <svg class="frame" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-        <!-- 外枠 -->
-        <rect
-          x="7" y="7" width="86" height="86"
-          rx="18" ry="18"
-          fill="none"
-          stroke="rgba(244,176,0,0.98)"
-          stroke-width="5"
-        />
-        <!-- 内枠 -->
-        <rect
-          x="14" y="14" width="72" height="72"
-          rx="14" ry="14"
-          fill="none"
-          stroke="rgba(244,176,0,0.48)"
-          stroke-width="3"
-        />
+        <rect x="7" y="7" width="86" height="86" rx="18" ry="18"
+              fill="none" stroke="rgba(244,176,0,0.98)" stroke-width="5" />
+        <rect x="14" y="14" width="72" height="72" rx="14" ry="14"
+              fill="none" stroke="rgba(244,176,0,0.48)" stroke-width="3" />
       </svg>
 
       <div class="layer">
-        <div class="title" id="titleText">メモリ稼働率</div>
+        <div class="title">メモリ稼働率</div>
 
-        <div class="numRow" id="numRow">
-          <div class="num" id="numText">60</div>
-          <div class="unit" id="unitText">%</div>
+        <div class="numRow">
+          <div class="num">60</div>
+          <div class="unit">%</div>
         </div>
 
-        <div class="dash" id="dashLine"></div>
+        <div class="dash"></div>
 
-        <div class="status" id="statusText">稼働状態：通常</div>
+        <div class="status">稼働状態：通常</div>
       </div>
     </div>
   </div>
 
-  <!-- 透けパネル -->
+  <!-- Panel -->
   <div class="panel" id="panel">
     <div class="panelHeader">
       <div>
-        <div class="panelTitle">位置調整（縦）＋文字サイズ＋点線長さ</div>
-        <div class="panelHint">スライダーで決めたら COPY → そのまま俺に送れ。</div>
+        <div class="panelTitle">調整（＋／−）</div>
+        <div class="panelHint">ボタンで位置/サイズ/点線を決めたら COPY → そのまま送れ。</div>
       </div>
       <button class="btn" id="toggleBtn">SHOW</button>
     </div>
 
     <div class="panelBody" id="panelBody">
-      <div class="grid">
-
-        <!-- Y調整 -->
-        <div class="row">
-          <div class="labelLine">
-            <div class="label">題目 Y</div>
-            <div class="val" id="vTitleY">0px</div>
-          </div>
-          <input type="range" id="sTitleY" min="-160" max="160" step="1" value="0">
+      <!-- 位置Y -->
+      <div class="row" data-key="titleY" data-unit="px" data-step="2" data-min="-200" data-max="200">
+        <div class="rowTop"><div class="label">題目 Y</div><div class="value" id="v-titleY"></div></div>
+        <div class="stepper">
+          <button class="stepBtn" data-act="minus">−</button>
+          <div class="stepMid" id="m-titleY"></div>
+          <button class="stepBtn" data-act="plus">＋</button>
         </div>
+      </div>
 
-        <div class="row">
-          <div class="labelLine">
-            <div class="label">数字 Y</div>
-            <div class="val" id="vNumY">0px</div>
-          </div>
-          <input type="range" id="sNumY" min="-160" max="160" step="1" value="0">
+      <div class="row" data-key="numY" data-unit="px" data-step="2" data-min="-220" data-max="220">
+        <div class="rowTop"><div class="label">数字 Y</div><div class="value" id="v-numY"></div></div>
+        <div class="stepper">
+          <button class="stepBtn" data-act="minus">−</button>
+          <div class="stepMid" id="m-numY"></div>
+          <button class="stepBtn" data-act="plus">＋</button>
         </div>
+      </div>
 
-        <div class="row">
-          <div class="labelLine">
-            <div class="label">点線 Y</div>
-            <div class="val" id="vDashY">0px</div>
-          </div>
-          <input type="range" id="sDashY" min="-160" max="160" step="1" value="0">
+      <div class="row" data-key="dashY" data-unit="px" data-step="2" data-min="-220" data-max="220">
+        <div class="rowTop"><div class="label">点線 Y</div><div class="value" id="v-dashY"></div></div>
+        <div class="stepper">
+          <button class="stepBtn" data-act="minus">−</button>
+          <div class="stepMid" id="m-dashY"></div>
+          <button class="stepBtn" data-act="plus">＋</button>
         </div>
+      </div>
 
-        <div class="row">
-          <div class="labelLine">
-            <div class="label">稼働状態 Y</div>
-            <div class="val" id="vStatusY">0px</div>
-          </div>
-          <input type="range" id="sStatusY" min="-160" max="160" step="1" value="0">
+      <div class="row" data-key="statusY" data-unit="px" data-step="2" data-min="-220" data-max="220">
+        <div class="rowTop"><div class="label">稼働状態 Y</div><div class="value" id="v-statusY"></div></div>
+        <div class="stepper">
+          <button class="stepBtn" data-act="minus">−</button>
+          <div class="stepMid" id="m-statusY"></div>
+          <button class="stepBtn" data-act="plus">＋</button>
         </div>
+      </div>
 
-        <!-- 文字サイズ -->
-        <div class="row">
-          <div class="labelLine">
-            <div class="label">題目 サイズ</div>
-            <div class="val" id="vTitleSize">22px</div>
-          </div>
-          <input type="range" id="sTitleSize" min="12" max="40" step="1" value="22">
+      <!-- サイズ -->
+      <div class="row" data-key="titleSize" data-unit="px" data-step="1" data-min="10" data-max="46">
+        <div class="rowTop"><div class="label">題目 サイズ</div><div class="value" id="v-titleSize"></div></div>
+        <div class="stepper">
+          <button class="stepBtn" data-act="minus">−</button>
+          <div class="stepMid" id="m-titleSize"></div>
+          <button class="stepBtn" data-act="plus">＋</button>
         </div>
+      </div>
 
-        <div class="row">
-          <div class="labelLine">
-            <div class="label">数字 サイズ</div>
-            <div class="val" id="vNumSize">92px</div>
-          </div>
-          <input type="range" id="sNumSize" min="40" max="150" step="1" value="92">
+      <div class="row" data-key="numSize" data-unit="px" data-step="2" data-min="40" data-max="170">
+        <div class="rowTop"><div class="label">数字 サイズ</div><div class="value" id="v-numSize"></div></div>
+        <div class="stepper">
+          <button class="stepBtn" data-act="minus">−</button>
+          <div class="stepMid" id="m-numSize"></div>
+          <button class="stepBtn" data-act="plus">＋</button>
         </div>
+      </div>
 
-        <div class="row">
-          <div class="labelLine">
-            <div class="label">稼働状態 サイズ</div>
-            <div class="val" id="vStatusSize">20px</div>
-          </div>
-          <input type="range" id="sStatusSize" min="10" max="34" step="1" value="20">
+      <div class="row" data-key="statusSize" data-unit="px" data-step="1" data-min="10" data-max="40">
+        <div class="rowTop"><div class="label">稼働状態 サイズ</div><div class="value" id="v-statusSize"></div></div>
+        <div class="stepper">
+          <button class="stepBtn" data-act="minus">−</button>
+          <div class="stepMid" id="m-statusSize"></div>
+          <button class="stepBtn" data-act="plus">＋</button>
         </div>
+      </div>
 
-        <!-- 点線長さ -->
-        <div class="row">
-          <div class="labelLine">
-            <div class="label">点線 長さ</div>
-            <div class="val" id="vDashW">220px</div>
-          </div>
-          <input type="range" id="sDashW" min="80" max="420" step="1" value="220">
+      <!-- 点線長さ -->
+      <div class="row" data-key="dashW" data-unit="px" data-step="5" data-min="80" data-max="460">
+        <div class="rowTop"><div class="label">点線 長さ</div><div class="value" id="v-dashW"></div></div>
+        <div class="stepper">
+          <button class="stepBtn" data-act="minus">−</button>
+          <div class="stepMid" id="m-dashW"></div>
+          <button class="stepBtn" data-act="plus">＋</button>
         </div>
+      </div>
 
-        <div class="actions">
-          <button class="btn" id="copyBtn">COPY</button>
-          <button class="btn" id="resetBtn">RESET</button>
-        </div>
+      <div class="actions">
+        <button class="btn" id="copyBtn">COPY</button>
+        <button class="btn" id="resetBtn">RESET</button>
       </div>
     </div>
   </div>
@@ -418,99 +412,56 @@
 
   <script>
     const root = document.documentElement;
+    const panelBody = document.getElementById("panelBody");
+    const toggleBtn = document.getElementById("toggleBtn");
+    const toast = document.getElementById("toast");
+    const KEY = "goja_square_stepper_v1";
 
-    const el = {
-      toggleBtn: document.getElementById("toggleBtn"),
-      panelBody: document.getElementById("panelBody"),
-      toast: document.getElementById("toast"),
-      copyBtn: document.getElementById("copyBtn"),
-      resetBtn: document.getElementById("resetBtn"),
-
-      sTitleY: document.getElementById("sTitleY"),
-      sNumY: document.getElementById("sNumY"),
-      sDashY: document.getElementById("sDashY"),
-      sStatusY: document.getElementById("sStatusY"),
-
-      sTitleSize: document.getElementById("sTitleSize"),
-      sNumSize: document.getElementById("sNumSize"),
-      sStatusSize: document.getElementById("sStatusSize"),
-
-      sDashW: document.getElementById("sDashW"),
-
-      vTitleY: document.getElementById("vTitleY"),
-      vNumY: document.getElementById("vNumY"),
-      vDashY: document.getElementById("vDashY"),
-      vStatusY: document.getElementById("vStatusY"),
-
-      vTitleSize: document.getElementById("vTitleSize"),
-      vNumSize: document.getElementById("vNumSize"),
-      vStatusSize: document.getElementById("vStatusSize"),
-
-      vDashW: document.getElementById("vDashW"),
+    const DEFAULT = {
+      titleY: 0,
+      numY: 0,
+      dashY: 0,
+      statusY: 0,
+      titleSize: 22,
+      numSize: 92,
+      statusSize: 20,
+      dashW: 220
     };
 
-    const KEY = "goja_tuner_square_v1";
+    const state = { ...DEFAULT };
 
     function showToast(msg){
-      el.toast.textContent = msg;
-      el.toast.style.display = "block";
+      toast.textContent = msg;
+      toast.style.display = "block";
       clearTimeout(showToast._t);
-      showToast._t = setTimeout(()=>{ el.toast.style.display="none"; }, 1200);
+      showToast._t = setTimeout(()=>toast.style.display="none", 1100);
     }
 
-    function setVar(name, value){
-      root.style.setProperty(name, value);
-    }
+    function clamp(v, min, max){ return Math.max(min, Math.min(max, v)); }
 
-    function applyFromSliders(){
-      const titleY = Number(el.sTitleY.value);
-      const numY = Number(el.sNumY.value);
-      const dashY = Number(el.sDashY.value);
-      const statusY = Number(el.sStatusY.value);
+    function apply(){
+      root.style.setProperty("--titleY", state.titleY + "px");
+      root.style.setProperty("--numY", state.numY + "px");
+      root.style.setProperty("--dashY", state.dashY + "px");
+      root.style.setProperty("--statusY", state.statusY + "px");
 
-      const titleSize = Number(el.sTitleSize.value);
-      const numSize = Number(el.sNumSize.value);
-      const statusSize = Number(el.sStatusSize.value);
+      root.style.setProperty("--titleSize", state.titleSize + "px");
+      root.style.setProperty("--numSize", state.numSize + "px");
+      root.style.setProperty("--statusSize", state.statusSize + "px");
 
-      const dashW = Number(el.sDashW.value);
+      root.style.setProperty("--dashW", state.dashW + "px");
 
-      setVar("--titleY", titleY + "px");
-      setVar("--numY", numY + "px");
-      setVar("--dashY", dashY + "px");
-      setVar("--statusY", statusY + "px");
+      // UI表示更新
+      for (const k of Object.keys(state)){
+        const v = state[k];
+        const vEl = document.getElementById("v-" + k);
+        const mEl = document.getElementById("m-" + k);
+        if(vEl) vEl.textContent = v + (k.includes("Size") || k.endsWith("Y") || k==="dashW" ? "px" : "");
+        if(mEl) mEl.textContent = v + (k.includes("Size") || k.endsWith("Y") || k==="dashW" ? "px" : "");
+      }
 
-      setVar("--titleSize", titleSize + "px");
-      setVar("--numSize", numSize + "px");
-      setVar("--statusSize", statusSize + "px");
-
-      setVar("--dashW", dashW + "px");
-
-      el.vTitleY.textContent = titleY + "px";
-      el.vNumY.textContent = numY + "px";
-      el.vDashY.textContent = dashY + "px";
-      el.vStatusY.textContent = statusY + "px";
-
-      el.vTitleSize.textContent = titleSize + "px";
-      el.vNumSize.textContent = numSize + "px";
-      el.vStatusSize.textContent = statusSize + "px";
-
-      el.vDashW.textContent = dashW + "px";
-
-      save();
-    }
-
-    function save(){
-      const data = {
-        titleY: el.sTitleY.value,
-        numY: el.sNumY.value,
-        dashY: el.sDashY.value,
-        statusY: el.sStatusY.value,
-        titleSize: el.sTitleSize.value,
-        numSize: el.sNumSize.value,
-        statusSize: el.sStatusSize.value,
-        dashW: el.sDashW.value
-      };
-      localStorage.setItem(KEY, JSON.stringify(data));
+      // save
+      localStorage.setItem(KEY, JSON.stringify(state));
     }
 
     function load(){
@@ -518,58 +469,29 @@
         const raw = localStorage.getItem(KEY);
         if(!raw) return;
         const d = JSON.parse(raw);
-
-        if(d.titleY != null) el.sTitleY.value = d.titleY;
-        if(d.numY != null) el.sNumY.value = d.numY;
-        if(d.dashY != null) el.sDashY.value = d.dashY;
-        if(d.statusY != null) el.sStatusY.value = d.statusY;
-
-        if(d.titleSize != null) el.sTitleSize.value = d.titleSize;
-        if(d.numSize != null) el.sNumSize.value = d.numSize;
-        if(d.statusSize != null) el.sStatusSize.value = d.statusSize;
-
-        if(d.dashW != null) el.sDashW.value = d.dashW;
+        for(const k of Object.keys(DEFAULT)){
+          if(d[k] !== undefined) state[k] = Number(d[k]);
+        }
       }catch(e){}
     }
 
-    function resetAll(){
-      el.sTitleY.value = 0;
-      el.sNumY.value = 0;
-      el.sDashY.value = 0;
-      el.sStatusY.value = 0;
-
-      el.sTitleSize.value = 22;
-      el.sNumSize.value = 92;
-      el.sStatusSize.value = 20;
-
-      el.sDashW.value = 220;
-
-      applyFromSliders();
+    function reset(){
+      Object.assign(state, DEFAULT);
+      apply();
       showToast("リセットした");
     }
 
-    async function copyConfig(){
-      const cfg = {
-        titleY: Number(el.sTitleY.value),
-        numY: Number(el.sNumY.value),
-        dashY: Number(el.sDashY.value),
-        statusY: Number(el.sStatusY.value),
-        titleSize: Number(el.sTitleSize.value),
-        numSize: Number(el.sNumSize.value),
-        statusSize: Number(el.sStatusSize.value),
-        dashW: Number(el.sDashW.value),
-      };
-
+    async function copy(){
       const text =
 `GOJA TUNER 値（これを俺に送れ）
-titleY=${cfg.titleY}
-numY=${cfg.numY}
-dashY=${cfg.dashY}
-statusY=${cfg.statusY}
-titleSize=${cfg.titleSize}
-numSize=${cfg.numSize}
-statusSize=${cfg.statusSize}
-dashW=${cfg.dashW}`;
+titleY=${state.titleY}
+numY=${state.numY}
+dashY=${state.dashY}
+statusY=${state.statusY}
+titleSize=${state.titleSize}
+numSize=${state.numSize}
+statusSize=${state.statusSize}
+dashW=${state.dashW}`;
 
       try{
         await navigator.clipboard.writeText(text);
@@ -579,40 +501,66 @@ dashW=${cfg.dashW}`;
       }
     }
 
+    // Panel show/hide
     function setPanel(open){
-      el.panelBody.style.display = open ? "block" : "none";
-      el.toggleBtn.textContent = open ? "HIDE" : "SHOW";
+      panelBody.style.display = open ? "block" : "none";
+      toggleBtn.textContent = open ? "HIDE" : "SHOW";
     }
+    toggleBtn.addEventListener("click", ()=> setPanel(panelBody.style.display !== "block"));
 
-    [
-      el.sTitleY, el.sNumY, el.sDashY, el.sStatusY,
-      el.sTitleSize, el.sNumSize, el.sStatusSize,
-      el.sDashW
-    ].forEach(r => {
-      r.addEventListener("input", applyFromSliders);
-      r.addEventListener("change", applyFromSliders);
+    document.getElementById("resetBtn").addEventListener("click", reset);
+    document.getElementById("copyBtn").addEventListener("click", copy);
+
+    // Stepper handlers（長押しで連打）
+    let holdTimer = null;
+    function startHold(fn){
+      fn();
+      holdTimer = setInterval(fn, 110);
+    }
+    function stopHold(){
+      if(holdTimer){ clearInterval(holdTimer); holdTimer = null; }
+    }
+    window.addEventListener("pointerup", stopHold);
+    window.addEventListener("pointercancel", stopHold);
+    window.addEventListener("blur", stopHold);
+
+    document.querySelectorAll(".row").forEach(row => {
+      const key = row.dataset.key;
+      const unit = row.dataset.unit;
+      const step = Number(row.dataset.step);
+      const min = Number(row.dataset.min);
+      const max = Number(row.dataset.max);
+
+      row.querySelectorAll(".stepBtn").forEach(btn => {
+        const act = btn.dataset.act;
+
+        const bump = () => {
+          const dir = (act === "plus") ? +1 : -1;
+          state[key] = clamp(state[key] + dir * step, min, max);
+          apply();
+        };
+
+        // クリック
+        btn.addEventListener("click", (e) => {
+          e.preventDefault();
+          bump();
+        });
+
+        // 長押し（pointerdown）
+        btn.addEventListener("pointerdown", (e) => {
+          e.preventDefault();
+          startHold(bump);
+        }, { passive:false });
+      });
     });
 
-    el.toggleBtn.addEventListener("click", ()=>{
-      const open = el.panelBody.style.display !== "block";
-      setPanel(open);
-    });
-
-    el.copyBtn.addEventListener("click", copyConfig);
-    el.resetBtn.addEventListener("click", resetAll);
-
-    // ★iOS/LINE: スライダー操作中は縦スクロールに吸われない
-    document.querySelectorAll('input[type="range"]').forEach((r) => {
-      const stop = (e) => { e.stopPropagation(); };
-
-      r.addEventListener("touchstart", stop, { passive: true });
-      r.addEventListener("touchmove", (e) => { e.preventDefault(); }, { passive: false });
-      r.addEventListener("touchend", stop, { passive: true });
-    });
-
+    // init
     load();
-    applyFromSliders();
+    apply();
     setPanel(false);
+
+    // もし「まだ六角形が見える」なら、前のHTMLが残ってる可能性大。
+    // GitHub Pages/ブラウザで一度リロード（共有メニュー→“ページを再読み込み”）すると反映される。
   </script>
 </body>
 </html>
