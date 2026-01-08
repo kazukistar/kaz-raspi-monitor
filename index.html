@@ -1,170 +1,446 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>UI Layout Test Index</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>GOJA UI Variants (10 types × 6 metrics)</title>
 
-<style>
-body{
-  margin:0;
-  background:#000;
-  color:#fff;
-  font-family:"Times New Roman", serif;
-}
+  <!-- Fonts: 数字=デジタル寄り / 日本語=明朝寄り -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800&family=Noto+Serif+JP:wght@600;700&display=swap" rel="stylesheet">
 
-section{
-  padding:40px 0 80px;
-  border-bottom:1px solid #222;
-}
+  <style>
+    :root{
+      --bg:#000;
+      --panel:#070707;
+      --txt:#f2f2f2;
 
-h2{
-  text-align:center;
-  margin-bottom:30px;
-  font-size:22px;
-  letter-spacing:2px;
-}
+      /* ここを基準（エヴァ黄） */
+      --eva:#f6c400;
 
-.grid{
-  display:flex;
-  flex-direction:column;
-  gap:40px;
-  align-items:center;
-}
+      --thin:2.5;
+      --thick:6;
 
-.hex{
-  width:280px;
-  height:240px;
-}
+      /* 6角形の正規比：W/H = 100/86.6025 = 1.1547 */
+      --hex-ratio: 1.1547;
+    }
 
-.label{
-  font-family:"HGP明朝E", serif;
-  font-weight:bold;
-  text-anchor:middle;
-}
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      background: radial-gradient(1200px 800px at 50% 30%, #0d0d0d 0%, #000 55%, #000 100%);
+      color:var(--txt);
+      font-family: "Noto Serif JP", serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
 
-.value{
-  font-family:"Digital-7", monospace;
-  text-anchor:middle;
-}
+      padding:
+        calc(env(safe-area-inset-top) + 16px)
+        14px
+        calc(env(safe-area-inset-bottom) + 28px);
+    }
 
-.small{
-  font-size:14px;
-}
+    /* ====== Page header ====== */
+    .topbar{
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      padding: 10px 0 14px;
+      background: linear-gradient(to bottom, rgba(0,0,0,.92), rgba(0,0,0,.72) 60%, rgba(0,0,0,0));
+      backdrop-filter: blur(4px);
+    }
+    .title{
+      letter-spacing: .16em;
+      font-weight: 700;
+      font-size: 18px;
+      margin:0 0 6px 0;
+      opacity:.95;
+    }
+    .sub{
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", sans-serif;
+      font-size: 12px;
+      opacity:.7;
+      margin:0;
+      letter-spacing:.08em;
+    }
 
-.mid{
-  font-size:28px;
-}
+    /* ====== Variants layout ====== */
+    .variants{
+      display:flex;
+      flex-direction: column;
+      gap: 28px;
+    }
 
-.big{
-  font-size:52px;
-}
+    .variant{
+      border-top: 1px solid rgba(255,255,255,.08);
+      padding-top: 18px;
+    }
 
-.status{
-  font-family:"HGP明朝E", serif;
-  font-size:16px;
-}
-</style>
+    .variant-head{
+      display:flex;
+      align-items: baseline;
+      gap: 10px;
+      margin: 0 0 14px 0;
+    }
+    .variant-badge{
+      font-family: "Orbitron", monospace;
+      font-weight: 800;
+      letter-spacing: .16em;
+      font-size: 14px;
+      opacity:.95;
+    }
+    .variant-name{
+      font-weight: 700;
+      letter-spacing: .08em;
+      font-size: 14px;
+      opacity:.85;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px 12px;
+    }
+    @media (max-width: 360px){
+      .grid{ grid-template-columns: 1fr; }
+    }
+
+    /* ====== Card + Hex frame (SVG) ====== */
+    .card{
+      position: relative;
+      background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
+      border-radius: 14px;
+      overflow: hidden;
+      padding: 14px 14px 12px;
+      aspect-ratio: var(--hex-ratio);
+      min-height: 180px;
+    }
+
+    .glow{
+      position:absolute;
+      inset:-30px;
+      background: radial-gradient(closest-side, rgba(255,255,255,.08), rgba(0,0,0,0) 70%);
+      opacity:.25;
+      pointer-events:none;
+    }
+
+    .hex{
+      position:absolute;
+      inset: 10px;
+      pointer-events:none;
+      filter: drop-shadow(0 0 14px rgba(0,0,0,.65));
+    }
+    .hex svg{
+      width:100%;
+      height:100%;
+      display:block;
+    }
+
+    /* 中身は絶対に枠からはみ出さないように中央寄せ */
+    .content{
+      position:absolute;
+      inset: 18px 18px 18px;
+      display:flex;
+      flex-direction: column;
+      align-items:center;
+      justify-content: center;
+      gap: 10px;
+      text-align:center;
+    }
+
+    /* ====== Typography ====== */
+    .kicker{
+      font-weight: 700;
+      letter-spacing: .12em;
+      font-size: 18px;          /* ←題名 大きめ */
+      line-height: 1.1;
+      color: var(--accent);
+      text-shadow: 0 0 10px rgba(0,0,0,.75);
+    }
+
+    .kicker .small2{
+      display:block;            /* 2行目用 */
+      margin-top: 6px;
+      font-size: 13px;
+      letter-spacing: .18em;
+      opacity:.95;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", sans-serif;
+    }
+
+    .value{
+      font-family: "Orbitron", monospace;
+      font-weight: 800;
+      font-size: 56px;          /* ←数字 大きめ */
+      letter-spacing: .04em;
+      color: var(--accent);
+      line-height: 1;
+      text-shadow: 0 0 14px rgba(0,0,0,.85);
+    }
+    .unit{
+      font-family: "Orbitron", monospace;
+      font-weight: 600;
+      font-size: 16px;
+      opacity:.95;
+      margin-left: 8px;
+    }
+    .valueRow{
+      display:flex;
+      align-items: baseline;
+      justify-content:center;
+      gap: 0;
+    }
+
+    .footer{
+      font-weight: 700;
+      letter-spacing: .16em;
+      font-size: 14px;
+      color: rgba(255,255,255,.80);
+    }
+    .footer .jp{
+      color: var(--accent);
+      text-shadow: 0 0 10px rgba(0,0,0,.8);
+    }
+
+    /* Server status rows */
+    .servers{
+      width: 100%;
+      display:flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 4px;
+    }
+    .serverRow{
+      width: 100%;
+      display:grid;
+      grid-template-columns: 1fr auto;
+      align-items:center;
+      gap: 10px;
+      padding: 8px 10px;
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 10px;
+      background: rgba(0,0,0,.35);
+    }
+    .serverName{
+      text-align:left;
+      line-height:1.05;
+      letter-spacing:.16em;
+      font-weight:700;
+      color: rgba(255,255,255,.85);
+      font-family: "Orbitron", monospace;
+      font-size: 12px;
+    }
+    .serverName .line2{
+      display:block;
+      margin-top: 4px;
+      font-weight:600;
+      opacity:.95;
+    }
+    .serverState{
+      font-weight:700;
+      letter-spacing:.12em;
+      padding: 6px 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.25);
+      color: var(--accent);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    /* Utility */
+    .muted{ opacity:.75; }
+
+  </style>
 </head>
 
 <body>
+  <div class="topbar">
+    <h1 class="title">GOJA UI VARIANTS</h1>
+    <p class="sub">10タイプ×6項目（CPU温度 / CPU稼働率 / メモリ稼働率 / DOWNLOAD / UPLOAD / サーバー稼働）を一気に表示。※全部 “正六角形SVG” で崩れない版。</p>
+  </div>
 
-<!-- ===================== A ===================== -->
-<section style="color:#f5c400">
-<h2>A / 中央数値主役型</h2>
-<div class="grid">
-  <!-- CPU温度 -->
-  <svg class="hex" viewBox="0 0 300 260">
-    <polygon points="150,10 290,80 290,180 150,250 10,180 10,80" fill="none" stroke="#f5c400" stroke-width="6"/>
-    <text x="150" y="70" class="label mid">CPU温度</text>
-    <text x="150" y="150" class="value big">62</text>
-    <text x="185" y="150" class="label mid">℃</text>
-    <text x="150" y="205" class="status">稼働状態：通常</text>
-  </svg>
+  <div id="variants" class="variants"></div>
 
-  <!-- CPU稼働率 -->
-  <svg class="hex" viewBox="0 0 300 260">
-    <polygon points="150,10 290,80 290,180 150,250 10,180 10,80" fill="none" stroke="#f5c400" stroke-width="6"/>
-    <text x="150" y="70" class="label mid">CPU稼働率</text>
-    <text x="150" y="150" class="value big">45</text>
-    <text x="185" y="150" class="label mid">%</text>
-    <text x="150" y="205" class="status">稼働状態：通常</text>
-  </svg>
+  <script>
+    // ===== 正六角形（regular）SVG points =====
+    // viewBox: 0 0 100 86.6025
+    // points: (50,0) (100,21.6506) (100,64.9519) (50,86.6025) (0,64.9519) (0,21.6506)
 
-  <!-- メモリ -->
-  <svg class="hex" viewBox="0 0 300 260">
-    <polygon points="150,10 290,80 290,180 150,250 10,180 10,80" fill="none" stroke="#f5c400" stroke-width="6"/>
-    <text x="150" y="70" class="label mid">メモリ稼働率</text>
-    <text x="150" y="150" class="value big">60</text>
-    <text x="185" y="150" class="label mid">%</text>
-    <text x="150" y="205" class="status">稼働状態：通常</text>
-  </svg>
+    const HEX_POINTS = "50,0 100,21.6506 100,64.9519 50,86.6025 0,64.9519 0,21.6506";
 
-  <!-- DOWNLOAD -->
-  <svg class="hex" viewBox="0 0 300 260">
-    <polygon points="150,10 290,80 290,180 150,250 10,180 10,80" fill="none" stroke="#f5c400" stroke-width="6"/>
-    <text x="150" y="70" class="label mid">通信速度</text>
-    <text x="150" y="110" class="label small">DOWNLOAD</text>
-    <text x="150" y="165" class="value big">121</text>
-    <text x="200" y="165" class="label mid">Mbps</text>
-  </svg>
+    function hexSvg(accent, style="double", dashY=56.0){
+      // style:
+      // "double" : 二重枠 + 破線
+      // "single" : 単枠 + 破線
+      // "thick"  : 太枠 + 破線
+      const outer = (style === "thick") ? 7 : 5.5;
+      const inner = (style === "single") ? 0 : 2.5;
+      const innerOpacity = (style === "single") ? 0 : 0.9;
 
-  <!-- UPLOAD -->
-  <svg class="hex" viewBox="0 0 300 260">
-    <polygon points="150,10 290,80 290,180 150,250 10,180 10,80" fill="none" stroke="#f5c400" stroke-width="6"/>
-    <text x="150" y="70" class="label mid">通信速度</text>
-    <text x="150" y="110" class="label small">UPLOAD</text>
-    <text x="150" y="165" class="value big">35</text>
-    <text x="200" y="165" class="label mid">Mbps</text>
-  </svg>
+      return `
+        <svg viewBox="0 0 100 86.6025" preserveAspectRatio="none" aria-hidden="true">
+          <defs>
+            <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="${accent}" stop-opacity="1"/>
+              <stop offset="1" stop-color="${accent}" stop-opacity=".72"/>
+            </linearGradient>
+          </defs>
 
-  <!-- SERVER -->
-  <svg class="hex" viewBox="0 0 300 260">
-    <polygon points="150,10 290,80 290,180 150,250 10,180 10,80" fill="none" stroke="#f5c400" stroke-width="6"/>
-    <text x="150" y="70" class="label mid">サーバー稼働</text>
-    <text x="150" y="125" class="label small">GOJA DENPO-SERVER</text>
-    <text x="150" y="150" class="label small">GOJA CLOUD-SERVER</text>
-    <text x="150" y="205" class="status">稼働中</text>
-  </svg>
-</div>
-</section>
+          <!-- Outer -->
+          <polygon points="${HEX_POINTS}"
+            fill="none"
+            stroke="url(#g)"
+            stroke-width="${outer}"
+            stroke-linejoin="miter"
+            vector-effect="non-scaling-stroke" />
 
-<!-- ===================== B〜J ===================== -->
-<!-- UI思想違いを確認するため、色と構成だけ変えた同構成を量産 -->
+          <!-- Inner -->
+          ${
+            inner > 0 ? `
+            <polygon points="${HEX_POINTS}"
+              fill="none"
+              stroke="${accent}"
+              stroke-opacity="${innerOpacity}"
+              stroke-width="${inner}"
+              transform="translate(0,0) scale(0.92) translate(4.35,3.45)"
+              stroke-linejoin="miter"
+              vector-effect="non-scaling-stroke" />
+            ` : ``
+          }
 
-<script>
-const types = [
-  {name:"B / タイトル強調型", color:"#4aa3ff", titleSize:"big", valueSize:"mid"},
-  {name:"C / 上下分離型", color:"#5cff7a", titleSize:"mid", valueSize:"big"},
-  {name:"D / 左右分離型", color:"#ff6a6a", titleSize:"mid", valueSize:"mid"},
-  {name:"E / ミニマル", color:"#aaaaaa", titleSize:"small", valueSize:"big"},
-  {name:"F / 線主役", color:"#ffd54a", titleSize:"small", valueSize:"mid"},
-  {name:"G / 情報圧縮", color:"#b084ff", titleSize:"small", valueSize:"small"},
-  {name:"H / 分割完成候補", color:"#00ffd5", titleSize:"mid", valueSize:"big"},
-  {name:"I / 縦耐性", color:"#ff9f40", titleSize:"mid", valueSize:"mid"},
-  {name:"J / 破壊テスト", color:"#ff3cff", titleSize:"big", valueSize:"big"}
-];
+          <!-- Dashed line -->
+          <line x1="14" y1="${dashY}" x2="86" y2="${dashY}"
+            stroke="${accent}"
+            stroke-opacity=".85"
+            stroke-width="2.2"
+            stroke-dasharray="6 6"
+            vector-effect="non-scaling-stroke" />
+        </svg>
+      `;
+    }
 
-document.write(
-types.map(t=>`
-<section style="color:${t.color}">
-<h2>${t.name}</h2>
-<div class="grid">
-${["CPU温度","CPU稼働率","メモリ稼働率","DOWNLOAD","UPLOAD","SERVER"].map(label=>`
-<svg class="hex" viewBox="0 0 300 260">
-<polygon points="150,10 290,80 290,180 150,250 10,180 10,80"
- fill="none" stroke="${t.color}" stroke-width="6"/>
-<text x="150" y="80" class="label ${t.titleSize}">${label}</text>
-<text x="150" y="160" class="value ${t.valueSize}">
-${label==="SERVER"?"RUN":label==="DOWNLOAD"?121:label==="UPLOAD"?35:label==="CPU温度"?62:label==="CPU稼働率"?45:60}
-</text>
-</svg>
-`).join("")}
-</div>
-</section>
-`).join("")
-);
-</script>
+    // ===== 10 variants (A-J) =====
+    const variants = [
+      { key:"A", name:"中央数値主役型", accent:"#f6c400", frame:"double" },
+      { key:"B", name:"タイトル強調型", accent:"#4da3ff", frame:"double" },
+      { key:"C", name:"上下分離型",     accent:"#52ff7a", frame:"single" },
+      { key:"D", name:"左右分離型",     accent:"#ff6b6b", frame:"double" },
+      { key:"E", name:"ミニマル",       accent:"#bdbdbd", frame:"single" },
+      { key:"F", name:"線主役",         accent:"#ffd34d", frame:"thick"  },
+      { key:"G", name:"情報圧縮",       accent:"#b58bff", frame:"double" },
+      { key:"H", name:"分割完成候補",   accent:"#20f0d0", frame:"double" },
+      { key:"I", name:"縦耐性",         accent:"#ff9f43", frame:"single" },
+      { key:"J", name:"破壊テスト",     accent:"#ff4dff", frame:"thick"  },
+    ];
 
+    // ===== 6 metrics =====
+    const metrics = [
+      { id:"temp",   title:"CPU温度",        value:"62", unit:"°C", footer:"稼働状態：", footer2:"通常" },
+      { id:"cpu",    title:"CPU稼働率",      value:"45", unit:"%",  footer:"稼働状態：", footer2:"通常" },
+      { id:"mem",    title:"メモリ稼働率",   value:"60", unit:"%",  footer:"稼働状態：", footer2:"通常" },
+      { id:"down",   title:"通信速度",       sub:"DOWNLOAD", value:"121", unit:"Mbps", footer:"稼働状態：", footer2:"通常" },
+      { id:"up",     title:"通信速度",       sub:"UPLOAD",   value:"35",  unit:"Mbps", footer:"稼働状態：", footer2:"通常" },
+      { id:"srv",    title:"サーバー稼働状況", value:"", unit:"", footer:"稼働状態：", footer2:"通常" },
+    ];
+
+    function cardHtml(v, m){
+      const accent = v.accent;
+      const frame = v.frame;
+
+      // variantごとに “見た目の差” をちゃんと出す（タイトル/数字/破線位置の微調整）
+      // ここはユーザーのレビュー前提の“試験場”
+      let kickerSize = 18;
+      let valueSize = 56;
+      let dashY = 56.0;
+      let contentPad = 18;
+
+      if(v.key==="B"){ kickerSize = 20; valueSize = 52; }
+      if(v.key==="C"){ kickerSize = 18; valueSize = 58; dashY = 58.5; }
+      if(v.key==="D"){ kickerSize = 18; valueSize = 54; }
+      if(v.key==="E"){ kickerSize = 16; valueSize = 54; }
+      if(v.key==="F"){ kickerSize = 18; valueSize = 60; }
+      if(v.key==="G"){ kickerSize = 18; valueSize = 52; }
+      if(v.key==="H"){ kickerSize = 19; valueSize = 56; }
+      if(v.key==="I"){ kickerSize = 18; valueSize = 56; }
+      if(v.key==="J"){ kickerSize = 18; valueSize = 56; }
+
+      const kicker = `
+        <div class="kicker" style="font-size:${kickerSize}px;color:${accent}">
+          ${m.title}
+          ${m.sub ? `<span class="small2" style="color:${accent}">${m.sub}</span>` : ``}
+        </div>
+      `;
+
+      let centerBlock = "";
+      if(m.id === "srv"){
+        // “goja / ○○-server” の2行で
+        centerBlock = `
+          <div class="servers">
+            <div class="serverRow">
+              <div class="serverName">
+                GOJA
+                <span class="line2">DENPO-SERVER</span>
+              </div>
+              <div class="serverState" style="color:${accent}; border-color:rgba(255,255,255,.16)">稼働中</div>
+            </div>
+
+            <div class="serverRow">
+              <div class="serverName">
+                GOJA
+                <span class="line2">CLOUD-SERVER</span>
+              </div>
+              <div class="serverState" style="color:${accent}; border-color:rgba(255,255,255,.16)">稼働中</div>
+            </div>
+          </div>
+        `;
+      } else {
+        centerBlock = `
+          <div class="valueRow">
+            <div class="value" style="font-size:${valueSize}px;color:${accent}">${m.value}</div>
+            <div class="unit muted">${m.unit || ""}</div>
+          </div>
+        `;
+      }
+
+      return `
+        <div class="card" style="--accent:${accent};">
+          <div class="glow"></div>
+
+          <div class="hex">
+            ${hexSvg(accent, frame, dashY)}
+          </div>
+
+          <div class="content" style="inset:${contentPad}px ${contentPad}px ${contentPad}px;">
+            ${kicker}
+            ${centerBlock}
+            <div class="footer">
+              <span class="jp" style="color:${accent}">${m.footer}</span>
+              <span class="jp" style="color:${accent}">${m.footer2}</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function render(){
+      const root = document.getElementById("variants");
+      root.innerHTML = variants.map(v => {
+        const cards = metrics.map(m => cardHtml(v, m)).join("");
+        return `
+          <section class="variant">
+            <div class="variant-head">
+              <div class="variant-badge" style="color:${v.accent}">${v.key}</div>
+              <div class="variant-name" style="color:${v.accent}">/ ${v.name}</div>
+            </div>
+            <div class="grid">${cards}</div>
+          </section>
+        `;
+      }).join("");
+    }
+
+    render();
+  </script>
 </body>
 </html>
