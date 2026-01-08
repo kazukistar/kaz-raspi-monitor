@@ -1,229 +1,269 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>KAZ-RASPI Monitor</title>
+  <title>KAZ-RASPI / Server Status Monitor</title>
 
-  <!-- Fonts (fallbackあり) -->
+  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@700&family=Orbitron:wght@600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Noto+Serif+JP:wght@700&display=swap" rel="stylesheet">
 
   <style>
     :root{
-      --bg: #000;
-      --card-bg: rgba(18,18,18,0.75);
-      --shadow: 0 10px 30px rgba(0,0,0,0.65);
-      --gold: #f4b000;          /* エヴァ寄りの黄色 */
-      --gold2: rgba(244,176,0,0.55);
-      --text-dim: rgba(255,255,255,0.70);
-      --muted: rgba(255,255,255,0.45);
+      /* EVAっぽい黄（元の雰囲気を崩さない範囲） */
+      --eva:#f2b200;
+      --bg:#000;
 
-      /* ====== ここだけ調整（指示範囲） ====== */
-      --title-top: 32px;        /* 題名：もう少し下 */
-      --title-size: 26px;
-
-      --value-size: 102px;      /* 数字：もう少し大きく */
+      /* ここだけ調整（指定箇所） */
+      --title-top: 34px;         /* 題名を“少し下へ” */
+      --value-top: 86px;         /* 数字の領域を確保して潰れ防止 */
+      --value-size: 92px;        /* 数字を“もう少し大きく” */
       --unit-size: 22px;
 
-      --status-bottom: 52px;    /* 稼働状態：もっと上（=bottomを増やす） */
-      --status-size: 22px;      /* 稼働状態：もう少し大きく */
-      /* ===================================== */
+      --dash-top: 178px;
+      --dash-width: 62%;         /* 点線を“もう少し短く” */
+
+      --status-top: 198px;       /* 稼働状態を“もう少し上へ” */
+      --status-size: 22px;       /* 稼働状態を“もう少し大きく” */
     }
 
     *{ box-sizing:border-box; }
     body{
       margin:0;
-      background: var(--bg); /* 背景は真っ黒 */
-      color:#fff;
-      font-family: system-ui, -apple-system, "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+      background:var(--bg);      /* 背景は真っ黒 */
+      color:var(--eva);
+      -webkit-font-smoothing:antialiased;
+      font-synthesis-weight:none;
     }
 
     .wrap{
-      max-width: 520px;
-      margin: 18px auto 40px;
-      padding: 0 14px 40px;
+      width:min(720px, 100%);
+      margin:0 auto;
+      padding:24px 14px 48px;
     }
 
-    .section-title{
-      margin: 18px 4px 10px;
-      font-family: "Noto Serif JP", serif;
-      font-weight:700;
-      letter-spacing: .08em;
-      color: var(--gold);
-      font-size: 16px;
-      opacity: .85;
-    }
-
-    /* 縦1列固定 */
+    /* 1列固定（横2列にしない） */
     .stack{
       display:flex;
-      flex-direction: column;
-      gap: 14px;
+      flex-direction:column;
+      gap:16px;
     }
 
-    .card{
-      background: var(--card-bg);
-      border-radius: 26px;
-      box-shadow: var(--shadow);
-      padding: 16px;
+    .panel{
+      position:relative;
+      border-radius:22px;
+      background:rgba(255,255,255,0.06);
+      box-shadow:
+        0 12px 28px rgba(0,0,0,0.65),
+        inset 0 0 0 1px rgba(255,255,255,0.05);
+      overflow:hidden;
+      padding:18px 14px;
     }
 
-    /* 六角の比率固定（正六角形を崩さない） */
     .hexbox{
-      position: relative;
-      width: 100%;
-      aspect-ratio: 16 / 10;
-      border-radius: 20px;
-      overflow: hidden;
+      position:relative;
+      width:100%;
+      aspect-ratio: 16 / 9; /* これで見た目を崩さず安定 */
+      display:block;
     }
 
-    /* 六角SVG（正六角形） */
+    /* 正六角形SVG（崩れない） */
     .hexsvg{
       position:absolute;
       inset:0;
       width:100%;
       height:100%;
       display:block;
+      filter: drop-shadow(0 0 10px rgba(242,178,0,0.12));
+    }
+    .hex-outer{
+      fill: transparent;
+      stroke: var(--eva);
+      stroke-width: 3.2;
+      opacity: 0.95;
+    }
+    .hex-inner{
+      fill: transparent;
+      stroke: var(--eva);
+      stroke-width: 2.2;
+      opacity: 0.55;
     }
 
-    /* 中身レイヤ */
+    /* 中身（ここは位置だけ指定通り調整） */
     .content{
       position:absolute;
       inset:0;
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      justify-content:flex-start;
-      text-align:center;
-      padding: 0 10px;
+      display:block;
+      padding:18px 18px;
     }
 
-    /* 題名：少し下へ */
     .title{
-      margin-top: var(--title-top);
-      font-family: "Noto Serif JP", serif;
+      position:absolute;
+      left:0; right:0;
+      top: var(--title-top);
+      text-align:center;
+      font-family:"Noto Serif JP", serif;
       font-weight:700;
-      color: var(--gold);
-      font-size: var(--title-size);
-      letter-spacing: .10em;
-      line-height: 1.0;
+      font-size:28px;
+      letter-spacing:0.12em;
+      text-shadow: 0 0 18px rgba(242,178,0,0.10);
+      white-space:nowrap;
     }
 
-    .subtitle{
-      margin-top: 8px;
-      font-family: "Orbitron", system-ui, sans-serif;
-      color: var(--gold);
-      font-size: 16px;
-      letter-spacing: .22em;
-      opacity: .85;
-    }
-
-    /* 数字：少し大きく */
     .valueRow{
-      margin-top: 22px;
+      position:absolute;
+      left:0; right:0;
+      top: var(--value-top);
       display:flex;
-      align-items: baseline;
-      justify-content: center;
-      gap: 10px;
-    }
-    .value{
-      font-family: "Orbitron", system-ui, sans-serif;
-      font-weight: 700;
-      font-size: var(--value-size);
-      color: var(--gold);
-      letter-spacing: .02em;
-      line-height: 1.0;
-    }
-    .unit{
-      font-family: "Orbitron", system-ui, sans-serif;
-      font-weight: 600;
-      font-size: var(--unit-size);
-      color: var(--text-dim);
-      letter-spacing: .06em;
-      transform: translateY(-6px);
+      align-items:baseline;
+      justify-content:center;
+      gap:14px;
+      padding:0 14px;
     }
 
-    /* 稼働状態：少し上へ＆少し大きく */
+    .value{
+      font-family:"Share Tech Mono", ui-monospace, monospace;
+      font-size: var(--value-size);
+      line-height: 1;
+      letter-spacing:0.02em;
+      text-shadow: 0 0 22px rgba(242,178,0,0.12);
+      white-space:nowrap;
+    }
+
+    .unit{
+      font-family:"Share Tech Mono", ui-monospace, monospace;
+      font-size: var(--unit-size);
+      opacity:0.75;
+      transform: translateY(-6px);
+      white-space:nowrap;
+    }
+
+    .dash{
+      position:absolute;
+      left:50%;
+      top: var(--dash-top);
+      width: var(--dash-width);      /* 点線を短く */
+      transform:translateX(-50%);
+      border-top: 3px dashed rgba(242,178,0,0.45);
+    }
+
     .status{
       position:absolute;
-      left:0;
-      right:0;
-      bottom: var(--status-bottom);
-      font-family: "Noto Serif JP", serif;
+      left:0; right:0;
+      top: var(--status-top);        /* 稼働状態を上へ */
+      text-align:center;
+      font-family:"Noto Serif JP", serif;
       font-weight:700;
-      font-size: var(--status-size);
-      color: var(--gold);
-      letter-spacing: .10em;
-      opacity: .9;
+      font-size: var(--status-size); /* 文字も大きく */
+      letter-spacing:0.18em;
+      opacity:0.95;
+      white-space:nowrap;
     }
 
-    /* サーバー稼働状況：配置は今の雰囲気維持 */
-    .serverGrid{
+    /* 通信速度の英字 */
+    .sub{
       position:absolute;
-      left: 18px;
-      right: 18px;
-      top: 84px;
-      display:grid;
-      grid-template-columns: 1fr auto;
-      row-gap: 18px;
-      column-gap: 12px;
-      align-items:center;
-    }
-    .srvName{
-      font-family: "Orbitron", system-ui, sans-serif;
-      letter-spacing: .10em;
-      color: var(--text-dim);
-      font-size: 18px;
-      line-height: 1.05;
-      text-align:left;
-      white-space: pre-line;
-    }
-    .badge{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      min-width: 96px;
-      height: 44px;
-      padding: 0 14px;
-      border-radius: 999px;
-      border: 1.5px solid var(--gold2);
-      color: var(--gold);
-      font-family: "Noto Serif JP", serif;
-      font-weight:700;
-      font-size: 18px;
-      letter-spacing: .08em;
-      background: rgba(0,0,0,0.35);
+      left:0; right:0;
+      top: calc(var(--title-top) + 34px);
+      text-align:center;
+      font-family:"Share Tech Mono", ui-monospace, monospace;
+      font-size:18px;
+      letter-spacing:0.28em;
+      opacity:0.85;
+      white-space:nowrap;
     }
 
-    /* iOS Safariでのフォント潰れ対策 */
-    .title, .status, .badge, .value, .srvName{
-      -webkit-font-smoothing: antialiased;
-      text-rendering: geometricPrecision;
+    /* サーバ稼働状況（2行） */
+    .serversTitle{
+      position:absolute;
+      left:0; right:0;
+      top: var(--title-top);
+      text-align:center;
+      font-family:"Noto Serif JP", serif;
+      font-weight:700;
+      font-size:28px;
+      letter-spacing:0.12em;
+      white-space:nowrap;
+    }
+
+    .servers{
+      position:absolute;
+      left:22px; right:22px;
+      top: 88px;
+      display:flex;
+      flex-direction:column;
+      gap:14px;
+    }
+
+    .svRow{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:14px;
+    }
+
+    .svName{
+      font-family:"Share Tech Mono", ui-monospace, monospace;
+      font-size:20px;
+      letter-spacing:0.14em;
+      opacity:0.92;
+      line-height:1.05;
+      white-space:pre-line;
+    }
+
+    .badge{
+      min-width:92px;
+      text-align:center;
+      padding:10px 14px;
+      border-radius:999px;
+      border:2px solid rgba(242,178,0,0.55);
+      background:rgba(0,0,0,0.55);
+      font-family:"Noto Serif JP", serif;
+      font-weight:700;
+      letter-spacing:0.16em;
+      white-space:nowrap;
+    }
+
+    /* ヘッダ（任意。見た目は触らない＝最小） */
+    .topbar{
+      margin: 0 0 14px;
+      padding: 6px 2px 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+    .brand{
+      font-family:"Noto Serif JP", serif;
+      font-weight:700;
+      letter-spacing:0.22em;
+      font-size:22px;
+      opacity:0.92;
+    }
+    .subline{
+      margin-top:4px;
+      font-family:"Share Tech Mono", ui-monospace, monospace;
+      letter-spacing:0.16em;
+      opacity:0.65;
+      font-size:13px;
     }
   </style>
 </head>
 
 <body>
   <div class="wrap">
+    <div class="topbar">
+      <div class="brand">KAZ-RASPI</div>
+      <div class="subline">SERVER STATUS MONITOR / UPDATE 1.0s</div>
+    </div>
+
     <div class="stack">
-
       <!-- CPU温度 -->
-      <div class="card">
+      <div class="panel">
         <div class="hexbox">
-          <svg class="hexsvg" viewBox="0 0 1000 625" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-            <rect x="0" y="0" width="1000" height="625" fill="#000"/>
-
-            <polygon points="250,130 750,130 900,312.5 750,495 250,495 100,312.5"
-                     fill="none" stroke="var(--gold)" stroke-width="12" stroke-linejoin="round"/>
-            <polygon points="278,155 722,155 850,312.5 722,470 278,470 150,312.5"
-                     fill="none" stroke="var(--gold2)" stroke-width="6" stroke-linejoin="round"/>
-
-            <!-- 点線：もっと短く（長さだけ） -->
-            <line x1="370" y1="395" x2="630" y2="395"
-                  stroke="var(--gold2)" stroke-width="6"
-                  stroke-linecap="round" stroke-dasharray="14 14"/>
+          <svg class="hexsvg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+            <!-- 正六角形（尖り上） -->
+            <polygon class="hex-outer" points="50,4 92,27 92,73 50,96 8,73 8,27"></polygon>
+            <polygon class="hex-inner" points="50,10 86,30 86,70 50,90 14,70 14,30"></polygon>
           </svg>
 
           <div class="content">
@@ -232,23 +272,18 @@
               <div class="value" id="cpuTemp">62</div>
               <div class="unit">°C</div>
             </div>
+            <div class="dash"></div>
             <div class="status">稼働状態：通常</div>
           </div>
         </div>
       </div>
 
       <!-- CPU稼働率 -->
-      <div class="card">
+      <div class="panel">
         <div class="hexbox">
-          <svg class="hexsvg" viewBox="0 0 1000 625" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-            <rect x="0" y="0" width="1000" height="625" fill="#000"/>
-            <polygon points="250,130 750,130 900,312.5 750,495 250,495 100,312.5"
-                     fill="none" stroke="var(--gold)" stroke-width="12" stroke-linejoin="round"/>
-            <polygon points="278,155 722,155 850,312.5 722,470 278,470 150,312.5"
-                     fill="none" stroke="var(--gold2)" stroke-width="6" stroke-linejoin="round"/>
-            <line x1="370" y1="395" x2="630" y2="395"
-                  stroke="var(--gold2)" stroke-width="6"
-                  stroke-linecap="round" stroke-dasharray="14 14"/>
+          <svg class="hexsvg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+            <polygon class="hex-outer" points="50,4 92,27 92,73 50,96 8,73 8,27"></polygon>
+            <polygon class="hex-inner" points="50,10 86,30 86,70 50,90 14,70 14,30"></polygon>
           </svg>
 
           <div class="content">
@@ -257,23 +292,18 @@
               <div class="value" id="cpuUse">45</div>
               <div class="unit">%</div>
             </div>
+            <div class="dash"></div>
             <div class="status">稼働状態：通常</div>
           </div>
         </div>
       </div>
 
       <!-- メモリ稼働率 -->
-      <div class="card">
+      <div class="panel">
         <div class="hexbox">
-          <svg class="hexsvg" viewBox="0 0 1000 625" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-            <rect x="0" y="0" width="1000" height="625" fill="#000"/>
-            <polygon points="250,130 750,130 900,312.5 750,495 250,495 100,312.5"
-                     fill="none" stroke="var(--gold)" stroke-width="12" stroke-linejoin="round"/>
-            <polygon points="278,155 722,155 850,312.5 722,470 278,470 150,312.5"
-                     fill="none" stroke="var(--gold2)" stroke-width="6" stroke-linejoin="round"/>
-            <line x1="370" y1="395" x2="630" y2="395"
-                  stroke="var(--gold2)" stroke-width="6"
-                  stroke-linecap="round" stroke-dasharray="14 14"/>
+          <svg class="hexsvg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+            <polygon class="hex-outer" points="50,4 92,27 92,73 50,96 8,73 8,27"></polygon>
+            <polygon class="hex-inner" points="50,10 86,30 86,70 50,90 14,70 14,30"></polygon>
           </svg>
 
           <div class="content">
@@ -282,89 +312,78 @@
               <div class="value" id="memUse">60</div>
               <div class="unit">%</div>
             </div>
+            <div class="dash"></div>
             <div class="status">稼働状態：通常</div>
           </div>
         </div>
       </div>
 
       <!-- 通信速度 DOWNLOAD -->
-      <div class="card">
+      <div class="panel">
         <div class="hexbox">
-          <svg class="hexsvg" viewBox="0 0 1000 625" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-            <rect x="0" y="0" width="1000" height="625" fill="#000"/>
-            <polygon points="250,130 750,130 900,312.5 750,495 250,495 100,312.5"
-                     fill="none" stroke="var(--gold)" stroke-width="12" stroke-linejoin="round"/>
-            <polygon points="278,155 722,155 850,312.5 722,470 278,470 150,312.5"
-                     fill="none" stroke="var(--gold2)" stroke-width="6" stroke-linejoin="round"/>
-            <line x1="370" y1="395" x2="630" y2="395"
-                  stroke="var(--gold2)" stroke-width="6"
-                  stroke-linecap="round" stroke-dasharray="14 14"/>
+          <svg class="hexsvg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+            <polygon class="hex-outer" points="50,4 92,27 92,73 50,96 8,73 8,27"></polygon>
+            <polygon class="hex-inner" points="50,10 86,30 86,70 50,90 14,70 14,30"></polygon>
           </svg>
 
           <div class="content">
             <div class="title">通信速度</div>
-            <div class="subtitle">DOWNLOAD</div>
-            <div class="valueRow" style="margin-top: 16px;">
+            <div class="sub">DOWNLOAD</div>
+            <div class="valueRow" style="top: 102px;">
               <div class="value" id="dl">121</div>
               <div class="unit">Mbps</div>
             </div>
-            <div class="status">稼働状態：通常</div>
+            <div class="dash" style="top: 186px;"></div>
+            <div class="status" style="top: 206px;">稼働状態：通常</div>
           </div>
         </div>
       </div>
 
       <!-- 通信速度 UPLOAD -->
-      <div class="card">
+      <div class="panel">
         <div class="hexbox">
-          <svg class="hexsvg" viewBox="0 0 1000 625" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-            <rect x="0" y="0" width="1000" height="625" fill="#000"/>
-            <polygon points="250,130 750,130 900,312.5 750,495 250,495 100,312.5"
-                     fill="none" stroke="var(--gold)" stroke-width="12" stroke-linejoin="round"/>
-            <polygon points="278,155 722,155 850,312.5 722,470 278,470 150,312.5"
-                     fill="none" stroke="var(--gold2)" stroke-width="6" stroke-linejoin="round"/>
-            <line x1="370" y1="395" x2="630" y2="395"
-                  stroke="var(--gold2)" stroke-width="6"
-                  stroke-linecap="round" stroke-dasharray="14 14"/>
+          <svg class="hexsvg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+            <polygon class="hex-outer" points="50,4 92,27 92,73 50,96 8,73 8,27"></polygon>
+            <polygon class="hex-inner" points="50,10 86,30 86,70 50,90 14,70 14,30"></polygon>
           </svg>
 
           <div class="content">
             <div class="title">通信速度</div>
-            <div class="subtitle">UPLOAD</div>
-            <div class="valueRow" style="margin-top: 16px;">
+            <div class="sub">UPLOAD</div>
+            <div class="valueRow" style="top: 102px;">
               <div class="value" id="ul">35</div>
               <div class="unit">Mbps</div>
             </div>
-            <div class="status">稼働状態：通常</div>
+            <div class="dash" style="top: 186px;"></div>
+            <div class="status" style="top: 206px;">稼働状態：通常</div>
           </div>
         </div>
       </div>
 
       <!-- サーバー稼働状況 -->
-      <div class="card">
+      <div class="panel">
         <div class="hexbox">
-          <svg class="hexsvg" viewBox="0 0 1000 625" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-            <rect x="0" y="0" width="1000" height="625" fill="#000"/>
-            <polygon points="250,130 750,130 900,312.5 750,495 250,495 100,312.5"
-                     fill="none" stroke="var(--gold)" stroke-width="12" stroke-linejoin="round"/>
-            <polygon points="278,155 722,155 850,312.5 722,470 278,470 150,312.5"
-                     fill="none" stroke="var(--gold2)" stroke-width="6" stroke-linejoin="round"/>
-            <line x1="370" y1="395" x2="630" y2="395"
-                  stroke="var(--gold2)" stroke-width="6"
-                  stroke-linecap="round" stroke-dasharray="14 14"/>
+          <svg class="hexsvg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+            <polygon class="hex-outer" points="50,4 92,27 92,73 50,96 8,73 8,27"></polygon>
+            <polygon class="hex-inner" points="50,10 86,30 86,70 50,90 14,70 14,30"></polygon>
           </svg>
 
           <div class="content">
-            <div class="title">サーバー稼働状況</div>
+            <div class="serversTitle">サーバー稼働状況</div>
 
-            <div class="serverGrid">
-              <div class="srvName">GOJA<br>DENPO-SERVER</div>
-              <div class="badge" id="denpo">稼働中</div>
-
-              <div class="srvName">GOJA<br>CLOUD-SERVER</div>
-              <div class="badge" id="cloud">稼働中</div>
+            <div class="servers">
+              <div class="svRow">
+                <div class="svName">GOJA<br>DENPO-SERVER</div>
+                <div class="badge">稼働中</div>
+              </div>
+              <div class="svRow">
+                <div class="svName">GOJA<br>CLOUD-SERVER</div>
+                <div class="badge">稼働中</div>
+              </div>
             </div>
 
-            <div class="status">稼働状態：通常</div>
+            <div class="dash" style="top: 186px;"></div>
+            <div class="status" style="top: 206px;">稼働状態：通常</div>
           </div>
         </div>
       </div>
@@ -373,17 +392,8 @@
   </div>
 
   <script>
-    // レイアウト確認用のダミー
-    const setText = (id, v) => {
-      const el = document.getElementById(id);
-      if (el) el.textContent = v;
-    };
-
-    setText("cpuTemp", 62);
-    setText("cpuUse", 45);
-    setText("memUse", 60);
-    setText("dl", 121);
-    setText("ul", 35);
+    // ※ UI確認用の仮値（動作側に合わせて後で差し替え）
+    // ここは見た目に影響しないので触らない
   </script>
 </body>
 </html>
