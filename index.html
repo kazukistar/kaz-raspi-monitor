@@ -5,12 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>KAZ-RASPI / STATUS</title>
 
-  <!-- JP fallback (端末に HPG明朝E があればそれが最優先で使われる) -->
+  <!-- JP fallback（端末に HPG明朝E があれば最優先で使われる） -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@700;900&display=swap" rel="stylesheet">
 
-  <!-- DSEG 7-seg -->
+  <!-- 7-seg -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/keshikan/DSEG@v0.46.0/css/dseg.css">
 
   <style>
@@ -19,23 +19,28 @@
       --evaY2:#FFB100;
 
       --bg0:#020305;
-      --bg1:#06070a;
+      --bg1:#07080b;
 
-      --text: rgba(255,240,210,.95);
-      --muted: rgba(255,240,210,.72);
+      --text: rgba(255,240,210,.92);
+      --muted: rgba(255,240,210,.70);
 
       --ok:     rgba(255,196,0,.96);
       --caution:rgba(255,106,43,.96);
       --warn:   rgba(255,42,42,.96);
 
       --pad:14px;
-      --gap:18px;
+      --gap:22px;
 
-      /* 六角内の安全領域：%に戻す（vh固定をやめる） */
-      --safe-top: 18%;
+      /* 六角の「中身」安全領域 */
+      --safe-top: 16%;
       --safe-bottom: 18%;
-      --safe-left: 14%;
-      --safe-right: 14%;
+      --safe-left: 12%;
+      --safe-right: 12%;
+
+      /* あなたの参考画像に寄せる：六角は上に固定、下は余白 */
+      --panel-w: min(92vw, 520px);
+      --hex-size: clamp(300px, 78vw, 440px);
+      --panel-min-h: calc(var(--hex-size) + 240px);
     }
 
     *{ box-sizing:border-box; }
@@ -47,10 +52,10 @@
         radial-gradient(900px 600px at 80% 80%, rgba(255,42,42,.06), transparent 60%),
         linear-gradient(180deg, var(--bg0), var(--bg1));
       color:var(--text);
-      overflow:hidden; /* スクロールは frame に寄せる */
+      overflow:hidden;
     }
 
-    /* Fonts */
+    /* fonts */
     .jp{
       font-family: "HPG明朝E","HGP明朝E","Noto Serif JP",serif;
       font-weight: 900;
@@ -59,7 +64,7 @@
     .en{
       font-family: "Times New Roman", Times, serif;
       font-weight: 700;
-      letter-spacing: .14em;
+      letter-spacing: .16em;
       text-transform: uppercase;
     }
     .mono{
@@ -75,13 +80,13 @@
       letter-spacing:.06em;
     }
 
-    /* Scroll container */
+    /* scroll container */
     .frame{
       height:100%;
       overflow:auto;
       -webkit-overflow-scrolling: touch;
       padding:
-        calc(var(--pad) + env(safe-area-rea-inset-top, 0px))
+        calc(var(--pad) + env(safe-area-inset-top))
         calc(var(--pad) + env(safe-area-inset-right))
         calc(var(--pad) + env(safe-area-inset-bottom))
         calc(var(--pad) + env(safe-area-inset-left));
@@ -90,14 +95,7 @@
       gap:var(--gap);
     }
 
-    /* iOS safe-area typo guard (古いSafariでenvが無い時) */
-    @supports (padding: max(0px)) {
-      .frame{
-        padding-top: calc(var(--pad) + env(safe-area-inset-top));
-      }
-    }
-
-    /* Header */
+    /* header */
     .header{
       position:relative;
       border:1px solid rgba(255,196,0,.28);
@@ -118,7 +116,6 @@
       gap:12px;
       flex-wrap:wrap;
     }
-    .title{ font-size:22px; white-space:nowrap; }
     .pill{
       display:inline-flex; align-items:center; gap:10px;
       padding:6px 10px;
@@ -141,13 +138,21 @@
       color:var(--muted);
     }
 
-    /* Tile: 高さ固定をやめる。比率で六角形を維持 */
-    .tile{
-      position:relative;
-      width:min(92vw, 440px);
-      margin:0 auto;
-      aspect-ratio: 1 / 1.05;   /* ←六角が縦に少し長い見た目 */
-      filter: drop-shadow(0 0 14px rgba(255,196,0,.10));
+    /* panel = あなたの参考画像の「カード」 */
+    .panel{
+      width: var(--panel-w);
+      min-height: var(--panel-min-h);
+      margin: 0 auto;
+      position: relative;
+    }
+
+    /* hex block (top fixed) */
+    .hexBlock{
+      width: var(--hex-size);
+      height: var(--hex-size);
+      margin: 0 auto;
+      position: relative;
+      filter: drop-shadow(0 0 18px rgba(255,196,0,.10));
     }
 
     svg.hex{
@@ -155,63 +160,6 @@
       width:100%; height:100%;
     }
 
-    .safe{
-      position:absolute;
-      inset: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left);
-      display:grid;
-      grid-template-rows: min-content 1fr min-content;
-      align-items:center;
-      gap:10px;
-      text-align:center;
-      overflow:hidden; /* 中身だけ守る */
-    }
-
-    .metricTitle{
-      font-size: clamp(22px, 5.2vw, 32px);
-      line-height:1.05;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-      color: var(--evaY);
-      text-shadow: 0 0 18px rgba(255,196,0,.10);
-    }
-
-    .big{
-      font-size: clamp(56px, 13vw, 96px);
-      line-height: 0.90;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-      max-height: 1em;
-      color: var(--evaY);
-      text-shadow: 0 0 22px rgba(255,196,0,.10);
-    }
-    .unit{
-      font-size:.34em;
-      margin-left:10px;
-      color: var(--evaY);
-      vertical-align: top;
-      position: relative;
-      top: -0.12em;
-    }
-
-    .divider{
-      border-top: 4px dashed rgba(255,196,0,.78);
-      margin-top: 6px;
-    }
-    .bottomLine{
-      margin-top: 10px;
-      font-size: clamp(16px, 4.0vw, 24px);
-      color: var(--evaY);
-      display:flex;
-      justify-content:center;
-      gap: 14px;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-    }
-
-    /* Hex outlines */
     .hexOuter{ stroke: rgba(255,196,0,.98); stroke-width:2.8; fill:none; }
     .hexInner{ stroke: rgba(255,196,0,.55); stroke-width:1.6; fill:none; }
 
@@ -226,29 +174,98 @@
     .sev-warn{ animation:pulse 1.1s ease-in-out infinite; }
     @keyframes pulse{
       0%,100%{ filter: drop-shadow(0 0 14px rgba(255,42,42,.10)); }
-      50%{ filter: drop-shadow(0 0 30px rgba(255,42,42,.18)); }
+      50%{ filter: drop-shadow(0 0 34px rgba(255,42,42,.18)); }
     }
 
-    /* Storage tile content */
-    .mini{
-      font-size: 14px;
-      color: rgba(255,240,210,.86);
-      line-height:1.2;
+    .safe{
+      position:absolute;
+      inset: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left);
+      display:grid;
+      grid-template-rows: min-content 1fr min-content;
+      align-items:center;
+      gap:14px;
+      text-align:center;
+      overflow:hidden;
     }
-    .bars{
-      width:100%;
+
+    .metricTitle{
+      font-size: clamp(22px, 5.4vw, 34px);
+      line-height:1.05;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      color: var(--evaY);
+      text-shadow: 0 0 18px rgba(255,196,0,.10);
+    }
+
+    .big{
+      font-size: clamp(64px, 14vw, 112px);
+      line-height: 0.92;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      color: var(--evaY);
+      text-shadow: 0 0 22px rgba(255,196,0,.10);
+    }
+    .unit{
+      font-size:.30em;
+      margin-left:10px;
+      color: var(--evaY);
+      vertical-align: top;
+      position: relative;
+      top: -0.12em;
+      letter-spacing:.02em;
+    }
+
+    .divider{
+      border-top: 4px dashed rgba(255,196,0,.78);
+      margin-top: 6px;
+    }
+    .bottomLine{
+      margin-top: 10px;
+      font-size: clamp(18px, 4.2vw, 26px);
+      color: var(--evaY);
       display:flex;
-      flex-direction:column;
-      gap:10px;
-      margin-top:4px;
+      justify-content:center;
+      gap: 14px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    /* panel bottom blank area (あなたの参考画像の余白) */
+    .blank{
+      position:absolute;
+      left:0; right:0;
+      top: calc(var(--hex-size) + 12px);
+      bottom: 0;
+      /* ここは今は何も置かない。将来拡張用。 */
+    }
+
+    /* STORAGE / SERVICE inside hex (専用レイアウト) */
+    .miniBox{
+      width:100%;
       text-align:left;
+      color: rgba(255,240,210,.90);
+      font-size: 14px;
+      letter-spacing:.14em;
+    }
+    .label{
+      color: var(--evaY);
+      font-size: 16px;
+      margin: 2px 0 6px;
+      letter-spacing:.10em;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
     }
     .bar{
-      height:12px;
+      height:14px;
       border:2px solid rgba(255,196,0,.55);
       background: rgba(255,196,0,.06);
       position:relative;
       overflow:hidden;
+      margin: 6px 0 10px;
     }
     .bar i{
       position:absolute; inset:0;
@@ -257,30 +274,27 @@
       transition: width .45s ease;
       display:block;
     }
-    .svc{
-      margin-top:10px;
-      padding-top:10px;
-      border-top:1px dashed rgba(255,196,0,.35);
-      display:flex;
-      flex-direction:column;
-      gap:10px;
-      text-align:left;
-    }
     .svcLine{
       display:flex;
       justify-content:space-between;
       gap:10px;
+      align-items:center;
+      margin-top: 10px;
       white-space:nowrap;
       overflow:hidden;
-      text-overflow:ellipsis;
     }
-    .svcName{ overflow:hidden; text-overflow:ellipsis; }
+    .svcName{
+      overflow:hidden;
+      text-overflow:ellipsis;
+      color: rgba(255,240,210,.90);
+    }
     .svcState{
       padding:2px 8px;
       border:1px solid rgba(255,196,0,.40);
       background: rgba(255,196,0,.06);
       color: rgba(255,240,210,.92);
       flex: 0 0 auto;
+      letter-spacing:.08em;
     }
 
     .vignette{
@@ -297,7 +311,7 @@
 
     <div class="header">
       <div class="hrow">
-        <div class="title en">KAZ-RASPI</div>
+        <div class="en" style="font-size:22px;">KAZ-RASPI</div>
         <div class="pill">
           <span class="dot"></span>
           <span class="en" style="font-size:14px;">SYSTEM / ONLINE</span>
@@ -310,123 +324,178 @@
     </div>
 
     <!-- CPU温度 -->
-    <section class="tile sev-ok" id="tempTile">
-      <svg class="hex" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-        <polygon class="hexOuter" points="50,2 93,25 93,75 50,98 7,75 7,25"/>
-        <polygon class="hexInner" points="50,6 89,27.5 89,72.5 50,94 11,72.5 11,27.5"/>
-      </svg>
-      <div class="safe">
-        <div class="metricTitle jp">CPU温度</div>
-        <div style="display:grid; place-items:center; min-height:0;">
-          <div class="big seg"><span id="cpuTemp">58</span><span class="unit">℃</span></div>
-        </div>
-        <div>
-          <div class="divider"></div>
-          <div class="bottomLine jp"><span>稼働状態：</span><span id="tempState">通常</span></div>
+    <section class="panel">
+      <div class="hexBlock sev-ok" id="tempTile">
+        <svg class="hex" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+          <polygon class="hexOuter" points="50,2 93,25 93,75 50,98 7,75 7,25"/>
+          <polygon class="hexInner" points="50,6 89,27.5 89,72.5 50,94 11,72.5 11,27.5"/>
+        </svg>
+        <div class="safe">
+          <div class="metricTitle jp">CPU温度</div>
+          <div style="display:grid; place-items:center; min-height:0;">
+            <div class="big seg"><span id="cpuTemp">58</span><span class="unit">℃</span></div>
+          </div>
+          <div>
+            <div class="divider"></div>
+            <div class="bottomLine jp"><span>稼働状態：</span><span id="tempState">通常</span></div>
+          </div>
         </div>
       </div>
+      <div class="blank"></div>
     </section>
 
     <!-- CPU稼働率 -->
-    <section class="tile sev-ok" id="cpuTile">
-      <svg class="hex" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-        <polygon class="hexOuter" points="50,2 93,25 93,75 50,98 7,75 7,25"/>
-        <polygon class="hexInner" points="50,6 89,27.5 89,72.5 50,94 11,72.5 11,27.5"/>
-      </svg>
-      <div class="safe">
-        <div class="metricTitle jp">CPU稼働率</div>
-        <div style="display:grid; place-items:center; min-height:0;">
-          <div class="big seg"><span id="cpuUtil">50</span><span class="unit">%</span></div>
-        </div>
-        <div>
-          <div class="divider"></div>
-          <div class="bottomLine jp"><span>稼働状態：</span><span id="cpuState">通常</span></div>
+    <section class="panel">
+      <div class="hexBlock sev-ok" id="cpuTile">
+        <svg class="hex" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+          <polygon class="hexOuter" points="50,2 93,25 93,75 50,98 7,75 7,25"/>
+          <polygon class="hexInner" points="50,6 89,27.5 89,72.5 50,94 11,72.5 11,27.5"/>
+        </svg>
+        <div class="safe">
+          <div class="metricTitle jp">CPU稼働率</div>
+          <div style="display:grid; place-items:center; min-height:0;">
+            <div class="big seg"><span id="cpuUtil">50</span><span class="unit">%</span></div>
+          </div>
+          <div>
+            <div class="divider"></div>
+            <div class="bottomLine jp"><span>稼働状態：</span><span id="cpuState">通常</span></div>
+          </div>
         </div>
       </div>
+      <div class="blank"></div>
     </section>
 
     <!-- メモリ稼働率 -->
-    <section class="tile sev-ok" id="ramTile">
-      <svg class="hex" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-        <polygon class="hexOuter" points="50,2 93,25 93,75 50,98 7,75 7,25"/>
-        <polygon class="hexInner" points="50,6 89,27.5 89,72.5 50,94 11,72.5 11,27.5"/>
-      </svg>
-      <div class="safe">
-        <div class="metricTitle jp">メモリ稼働率</div>
-        <div style="display:grid; place-items:center; min-height:0;">
-          <div class="big seg"><span id="ramUtil">63</span><span class="unit">%</span></div>
-        </div>
-        <div>
-          <div class="divider"></div>
-          <div class="bottomLine jp"><span>稼働状態：</span><span id="ramState">通常</span></div>
+    <section class="panel">
+      <div class="hexBlock sev-ok" id="ramTile">
+        <svg class="hex" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+          <polygon class="hexOuter" points="50,2 93,25 93,75 50,98 7,75 7,25"/>
+          <polygon class="hexInner" points="50,6 89,27.5 89,72.5 50,94 11,72.5 11,27.5"/>
+        </svg>
+        <div class="safe">
+          <div class="metricTitle jp">メモリ稼働率</div>
+          <div style="display:grid; place-items:center; min-height:0;">
+            <div class="big seg"><span id="ramUtil">63</span><span class="unit">%</span></div>
+          </div>
+          <div>
+            <div class="divider"></div>
+            <div class="bottomLine jp"><span>稼働状態：</span><span id="ramState">通常</span></div>
+          </div>
         </div>
       </div>
+      <div class="blank"></div>
     </section>
 
     <!-- 通信速度（下り） -->
-    <section class="tile sev-ok" id="dlTile">
-      <svg class="hex" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-        <polygon class="hexOuter" points="50,2 93,25 93,75 50,98 7,75 7,25"/>
-        <polygon class="hexInner" points="50,6 89,27.5 89,72.5 50,94 11,72.5 11,27.5"/>
-      </svg>
-      <div class="safe">
-        <div class="metricTitle jp">通信速度（下り）</div>
-        <div style="display:grid; place-items:center; min-height:0;">
-          <div class="big seg" style="font-size: clamp(46px, 12vw, 92px);">
-            <span id="dl">120</span><span class="unit">Mbps</span>
+    <section class="panel">
+      <div class="hexBlock sev-ok" id="dlTile">
+        <svg class="hex" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+          <polygon class="hexOuter" points="50,2 93,25 93,75 50,98 7,75 7,25"/>
+          <polygon class="hexInner" points="50,6 89,27.5 89,72.5 50,94 11,72.5 11,27.5"/>
+        </svg>
+        <div class="safe">
+          <div class="metricTitle jp">通信速度（下り）</div>
+          <div style="display:grid; place-items:center; min-height:0;">
+            <div class="big seg" style="font-size: clamp(54px, 12.8vw, 106px);">
+              <span id="dl">121</span><span class="unit">Mbps</span>
+            </div>
+          </div>
+          <div>
+            <div class="divider"></div>
+            <div class="bottomLine en" style="color:rgba(255,240,210,.92);">DOWNLOAD</div>
           </div>
         </div>
-        <div>
-          <div class="divider"></div>
-          <div class="bottomLine en" style="color:rgba(255,240,210,.92);"><span>DOWNLOAD</span></div>
-        </div>
       </div>
+      <div class="blank"></div>
     </section>
 
     <!-- 通信速度（上り） -->
-    <section class="tile sev-ok" id="ulTile">
-      <svg class="hex" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-        <polygon class="hexOuter" points="50,2 93,25 93,75 50,98 7,75 7,25"/>
-        <polygon class="hexInner" points="50,6 89,27.5 89,72.5 50,94 11,72.5 11,27.5"/>
-      </svg>
-      <div class="safe">
-        <div class="metricTitle jp">通信速度（上り）</div>
-        <div style="display:grid; place-items:center; min-height:0;">
-          <div class="big seg" style="font-size: clamp(46px, 12vw, 92px);">
-            <span id="ul">35</span><span class="unit">Mbps</span>
+    <section class="panel">
+      <div class="hexBlock sev-ok" id="ulTile">
+        <svg class="hex" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+          <polygon class="hexOuter" points="50,2 93,25 93,75 50,98 7,75 7,25"/>
+          <polygon class="hexInner" points="50,6 89,27.5 89,72.5 50,94 11,72.5 11,27.5"/>
+        </svg>
+        <div class="safe">
+          <div class="metricTitle jp">通信速度（上り）</div>
+          <div style="display:grid; place-items:center; min-height:0;">
+            <div class="big seg" style="font-size: clamp(54px, 12.8vw, 106px);">
+              <span id="ul">35</span><span class="unit">Mbps</span>
+            </div>
           </div>
-        </div>
-        <div>
-          <div class="divider"></div>
-          <div class="bottomLine en" style="color:rgba(255,240,210,.92);"><span>UPLOAD</span></div>
+          <div>
+            <div class="divider"></div>
+            <div class="bottomLine en" style="color:rgba(255,240,210,.92);">UPLOAD</div>
+          </div>
         </div>
       </div>
+      <div class="blank"></div>
     </section>
 
-    <!-- 記憶容量 -->
-    <section class="tile sev-ok" id="storTile">
-      <svg class="hex" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-        <polygon class="hexOuter" points="50,2 93,25 93,75 50,98 7,75 7,25"/>
-        <polygon class="hexInner" points="50,6 89,27.5 89,72.5 50,94 11,72.5 11,27.5"/>
-      </svg>
+    <!-- 記憶容量（SDカード）※完全分解 -->
+    <section class="panel">
+      <div class="hexBlock sev-ok" id="sdTile">
+        <svg class="hex" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+          <polygon class="hexOuter" points="50,2 93,25 93,75 50,98 7,75 7,25"/>
+          <polygon class="hexInner" points="50,6 89,27.5 89,72.5 50,94 11,72.5 11,27.5"/>
+        </svg>
 
-      <div class="safe" style="--safe-top:16%; --safe-bottom:14%; --safe-left:12%; --safe-right:12%;">
-        <div class="metricTitle jp">記憶容量</div>
+        <div class="safe" style="--safe-top:14%; --safe-bottom:18%;">
+          <div class="metricTitle jp">記憶容量</div>
 
-        <div class="mini mono" style="min-height:0;">
-          <div class="bars">
-            <div class="jp" style="font-size:16px; color:var(--evaY); letter-spacing:.08em;">SDカード</div>
+          <div class="miniBox mono">
+            <div class="label jp">SDカード</div>
             <div class="bar"><i id="sdBar" style="width:31%"></i></div>
-            <div id="sdText">USED 18.3 / 58.3 GB (31%)</div>
-
-            <div style="height:6px"></div>
-
-            <div class="jp" style="font-size:16px; color:var(--evaY); letter-spacing:.08em;">外付けHDD</div>
-            <div class="bar"><i id="hddBar" style="width:21%"></i></div>
-            <div id="hddText">USED 212 / 1000 GB (21%)</div>
+            <div id="sdText">USED 18.1 / 58.3 GB (31%)</div>
           </div>
 
-          <div class="svc">
+          <div>
+            <div class="divider"></div>
+            <div class="bottomLine jp"><span>稼働状態：</span><span id="sdState">通常</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="blank"></div>
+    </section>
+
+    <!-- 記憶容量（外付けHDD）※完全分解 -->
+    <section class="panel">
+      <div class="hexBlock sev-ok" id="hddTile">
+        <svg class="hex" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+          <polygon class="hexOuter" points="50,2 93,25 93,75 50,98 7,75 7,25"/>
+          <polygon class="hexInner" points="50,6 89,27.5 89,72.5 50,94 11,72.5 11,27.5"/>
+        </svg>
+
+        <div class="safe" style="--safe-top:14%; --safe-bottom:18%;">
+          <div class="metricTitle jp">記憶容量</div>
+
+          <div class="miniBox mono">
+            <div class="label jp">外付けHDD</div>
+            <div class="bar"><i id="hddBar" style="width:21%"></i></div>
+            <div id="hddText">USED 210 / 1000 GB (21%)</div>
+          </div>
+
+          <div>
+            <div class="divider"></div>
+            <div class="bottomLine jp"><span>稼働状態：</span><span id="hddState">通常</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="blank"></div>
+    </section>
+
+    <!-- サーバー稼働状況 ※完全分解 -->
+    <section class="panel">
+      <div class="hexBlock sev-ok" id="svcTile">
+        <svg class="hex" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+          <polygon class="hexOuter" points="50,2 93,25 93,75 50,98 7,75 7,25"/>
+          <polygon class="hexInner" points="50,6 89,27.5 89,72.5 50,94 11,72.5 11,27.5"/>
+        </svg>
+
+        <div class="safe" style="--safe-top:14%; --safe-bottom:18%;">
+          <div class="metricTitle jp">サーバー稼働状況</div>
+
+          <div class="miniBox">
             <div class="svcLine">
               <div class="svcName en">GOJA-DENPO-SERVER</div>
               <div class="svcState jp" id="svcDenpo">稼働中...</div>
@@ -436,16 +505,17 @@
               <div class="svcState jp" id="svcCloud">稼働中...</div>
             </div>
           </div>
-        </div>
 
-        <div>
-          <div class="divider"></div>
-          <div class="bottomLine jp"><span>稼働状態：</span><span id="sysState">通常</span></div>
+          <div>
+            <div class="divider"></div>
+            <div class="bottomLine jp"><span>稼働状態：</span><span id="svcState">通常</span></div>
+          </div>
         </div>
       </div>
+      <div class="blank"></div>
     </section>
 
-    <div style="height:18px;"></div>
+    <div style="height:24px;"></div>
   </div>
 
   <div class="vignette"></div>
@@ -454,10 +524,10 @@
     const el = (id)=>document.getElementById(id);
     const clamp = (v,a,b)=>Math.max(a, Math.min(b,v));
 
-    // 変動が速すぎ問題：さらに落ち着かせる
+    /* 変動が速すぎ問題：さらに落ち着かせる */
     const UPDATE_SEC = 1.2;
-    const TAU = 3.4;  // ←ゆっくり
-    const MAX_STEP = { temp: 1.2, cpu: 2.8, ram: 2.2, dl: 12.0, ul: 7.0 };
+    const TAU = 3.8;  // ←よりゆっくり
+    const MAX_STEP = { temp: 1.0, cpu: 2.2, ram: 1.8, dl: 10.0, ul: 6.0 };
 
     function limitStep(cur, tgt, maxPerSec, dt){
       const maxStep = maxPerSec * dt;
@@ -491,6 +561,24 @@
       if(st==="restarting") return "再起動中...";
       return "停止";
     }
+    function updateServiceUI(){
+      el("svcDenpo").textContent = serviceLabel(services.denpo);
+      el("svcCloud").textContent = serviceLabel(services.cloud);
+
+      const anyDown = (services.denpo==="inactive") || (services.cloud==="inactive");
+      const anyRestart = (services.denpo==="restarting") || (services.cloud==="restarting");
+
+      if(anyDown){
+        el("svcState").textContent = "危険";
+        setSev(el("svcTile"), "sev-warn");
+      }else if(anyRestart){
+        el("svcState").textContent = "注意";
+        setSev(el("svcTile"), "sev-caution");
+      }else{
+        el("svcState").textContent = "通常";
+        setSev(el("svcTile"), "sev-ok");
+      }
+    }
     function maybeFlipServices(){
       const r = Math.random();
       if(r < 0.003) services.denpo = "restarting";
@@ -502,39 +590,24 @@
       else if(c < 0.003) services.cloud = "inactive";
       else if(c < 0.011) services.cloud = "active";
 
-      el("svcDenpo").textContent = serviceLabel(services.denpo);
-      el("svcCloud").textContent = serviceLabel(services.cloud);
-
-      const anyDown = (services.denpo==="inactive") || (services.cloud==="inactive");
-      const anyRestart = (services.denpo==="restarting") || (services.cloud==="restarting");
-
-      if(anyDown){
-        el("sysState").textContent = "危険";
-        setSev(el("storTile"), "sev-warn");
-      }else if(anyRestart){
-        el("sysState").textContent = "注意";
-        setSev(el("storTile"), "sev-caution");
-      }else{
-        el("sysState").textContent = "通常";
-        setSev(el("storTile"), "sev-ok");
-      }
+      updateServiceUI();
     }
 
-    const disp = { temp:58, cpu:50, ram:63, dl:120, ul:35, sdP:31, hddP:21 };
+    const disp = { temp:58, cpu:50, ram:63, dl:121, ul:35, sdP:31, hddP:21 };
     const tgt  = { ...disp };
 
     let last = performance.now();
     let acc = 0;
 
     function updateTargets(){
-      tgt.temp = clamp(tgt.temp + (Math.random()*2.0 - 1.0), 42, 82);
-      tgt.cpu  = clamp(tgt.cpu  + (Math.random()*7.0 - 3.5), 2, 98);
-      tgt.ram  = clamp(tgt.ram  + (Math.random()*6.0 - 3.0), 5, 98);
-      tgt.dl   = clamp(tgt.dl   + (Math.random()*18  - 9),   10, 300);
-      tgt.ul   = clamp(tgt.ul   + (Math.random()*12  - 6),    5, 150);
+      tgt.temp = clamp(tgt.temp + (Math.random()*1.8 - 0.9), 42, 82);
+      tgt.cpu  = clamp(tgt.cpu  + (Math.random()*6.0 - 3.0), 2, 98);
+      tgt.ram  = clamp(tgt.ram  + (Math.random()*5.0 - 2.5), 5, 98);
+      tgt.dl   = clamp(tgt.dl   + (Math.random()*16  - 8),   10, 300);
+      tgt.ul   = clamp(tgt.ul   + (Math.random()*10  - 5),    5, 150);
 
-      tgt.sdP  = clamp(tgt.sdP  + (Math.random()*0.6 - 0.3), 10, 90);
-      tgt.hddP = clamp(tgt.hddP + (Math.random()*0.6 - 0.3),  5, 95);
+      tgt.sdP  = clamp(tgt.sdP  + (Math.random()*0.5 - 0.25), 10, 90);
+      tgt.hddP = clamp(tgt.hddP + (Math.random()*0.5 - 0.25),  5, 95);
 
       maybeFlipServices();
     }
@@ -557,8 +630,8 @@
       disp.ram  = smooth(disp.ram,  limitStep(disp.ram,  tgt.ram,  MAX_STEP.ram,  dt), dt);
       disp.dl   = smooth(disp.dl,   limitStep(disp.dl,   tgt.dl,   MAX_STEP.dl,   dt), dt);
       disp.ul   = smooth(disp.ul,   limitStep(disp.ul,   tgt.ul,   MAX_STEP.ul,   dt), dt);
-      disp.sdP  = smooth(disp.sdP,  limitStep(disp.sdP,  tgt.sdP,  0.25, dt), dt);
-      disp.hddP = smooth(disp.hddP, limitStep(disp.hddP, tgt.hddP, 0.25, dt), dt);
+      disp.sdP  = smooth(disp.sdP,  limitStep(disp.sdP,  tgt.sdP,  0.22, dt), dt);
+      disp.hddP = smooth(disp.hddP, limitStep(disp.hddP, tgt.hddP, 0.22, dt), dt);
 
       const t = Math.round(disp.temp);
       const c = Math.round(disp.cpu);
@@ -582,20 +655,28 @@
       el("ramState").textContent = rs.jp;
       setSev(el("ramTile"), rs.sev);
 
+      // Storage % + bars
       const sdP = clamp(disp.sdP, 0, 100);
       const hddP = clamp(disp.hddP, 0, 100);
+
       el("sdBar").style.width = `${sdP.toFixed(0)}%`;
       el("sdText").textContent = `USED ${(58.3*sdP/100).toFixed(1)} / 58.3 GB (${sdP.toFixed(0)}%)`;
       el("hddBar").style.width = `${hddP.toFixed(0)}%`;
       el("hddText").textContent = `USED ${(1000*hddP/100).toFixed(0)} / 1000 GB (${hddP.toFixed(0)}%)`;
 
+      // Storage state (見た目用)
+      const sds = stateJP_byPercent(sdP);
+      const hds = stateJP_byPercent(hddP);
+      el("sdState").textContent = sds.jp;
+      el("hddState").textContent = hds.jp;
+      setSev(el("sdTile"), sds.sev);
+      setSev(el("hddTile"), hds.sev);
+
       requestAnimationFrame(tick);
     }
 
     // init
-    el("svcDenpo").textContent = serviceLabel(services.denpo);
-    el("svcCloud").textContent = serviceLabel(services.cloud);
-    maybeFlipServices();
+    updateServiceUI();
     requestAnimationFrame(tick);
   </script>
 </body>
