@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>GOJA UI Position Tuner</title>
+  <title>GOJA UI Position Tuner (Square)</title>
 
   <!-- Fonts（数字=デジタル寄り / 日本語=明朝寄り） -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -13,9 +13,7 @@
   <style>
     :root{
       --bg:#000;
-      --card:#0b0b0b;
       --gold:#f4b000;
-      --gold2:#c98900;
 
       /* 初期値（スライダーで更新） */
       --titleY: 0px;
@@ -28,6 +26,9 @@
       --statusSize: 20px;
 
       --dashW: 220px;
+
+      /* 四角枠の角丸 */
+      --boxRadius: 18px;
     }
 
     *{ box-sizing:border-box; }
@@ -52,22 +53,15 @@
     .card{
       width: min(92vw, 560px);
       aspect-ratio: 1 / 1;
-      background: var(--bg);
+      background: #000; /* 背景は真っ黒 */
       border-radius: 22px;
       position: relative;
       overflow: hidden;
       box-shadow: 0 0 0 1px rgba(255,255,255,0.06), 0 20px 60px rgba(0,0,0,0.55);
     }
 
-    /* “背景は真っ黒” */
-    .card::before{
-      content:"";
-      position:absolute; inset:0;
-      background:#000;
-    }
-
-    /* 六角形SVG */
-    .hex{
+    /* 四角枠SVG */
+    .frame{
       position:absolute;
       inset: 0;
       display:block;
@@ -81,7 +75,6 @@
     .layer{
       position:absolute;
       inset:0;
-      display:block;
       pointer-events:none;
     }
 
@@ -297,23 +290,24 @@
 <body>
   <div class="wrap">
     <div class="card" id="card">
-      <!-- 正六角形（外枠+内枠） -->
-      <svg class="hex" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-        <!-- 外枠：正六角形（フラットトップ） -->
-        <polygon
-          points="25,6.7 75,6.7 96.6,50 75,93.3 25,93.3 3.4,50"
+
+      <!-- 四角（外枠+内枠） -->
+      <svg class="frame" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+        <!-- 外枠 -->
+        <rect
+          x="7" y="7" width="86" height="86"
+          rx="18" ry="18"
           fill="none"
           stroke="rgba(244,176,0,0.98)"
           stroke-width="5"
-          stroke-linejoin="round"
         />
         <!-- 内枠 -->
-        <polygon
-          points="29,14 71,14 89,50 71,86 29,86 11,50"
+        <rect
+          x="14" y="14" width="72" height="72"
+          rx="14" ry="14"
           fill="none"
           stroke="rgba(244,176,0,0.48)"
           stroke-width="3"
-          stroke-linejoin="round"
         />
       </svg>
 
@@ -455,7 +449,7 @@
       vDashW: document.getElementById("vDashW"),
     };
 
-    const KEY = "goja_tuner_v1";
+    const KEY = "goja_tuner_square_v1";
 
     function showToast(msg){
       el.toast.textContent = msg;
@@ -581,18 +575,15 @@ dashW=${cfg.dashW}`;
         await navigator.clipboard.writeText(text);
         showToast("コピーした");
       }catch(e){
-        // fallback
         prompt("これをコピーして送れ", text);
       }
     }
 
-    // show/hide
     function setPanel(open){
       el.panelBody.style.display = open ? "block" : "none";
       el.toggleBtn.textContent = open ? "HIDE" : "SHOW";
     }
 
-    // events
     [
       el.sTitleY, el.sNumY, el.sDashY, el.sStatusY,
       el.sTitleSize, el.sNumSize, el.sStatusSize,
@@ -610,21 +601,15 @@ dashW=${cfg.dashW}`;
     el.copyBtn.addEventListener("click", copyConfig);
     el.resetBtn.addEventListener("click", resetAll);
 
-    // ★iOS/LINE: スライダー操作中は縦スクロールに吸われない（重要）
+    // ★iOS/LINE: スライダー操作中は縦スクロールに吸われない
     document.querySelectorAll('input[type="range"]').forEach((r) => {
       const stop = (e) => { e.stopPropagation(); };
 
       r.addEventListener("touchstart", stop, { passive: true });
-
-      // ドラッグ中のページスクロールを殺す（passive:false必須）
-      r.addEventListener("touchmove", (e) => {
-        e.preventDefault();
-      }, { passive: false });
-
+      r.addEventListener("touchmove", (e) => { e.preventDefault(); }, { passive: false });
       r.addEventListener("touchend", stop, { passive: true });
     });
 
-    // init
     load();
     applyFromSliders();
     setPanel(false);
