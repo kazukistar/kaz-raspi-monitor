@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>GOJA NERV MONITOR (TUNER)</title>
 
-  <!-- Fonts (任意：GitHub Pagesなら読める) -->
+  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Noto+Serif+JP:wght@700;900&display=swap" rel="stylesheet">
@@ -21,7 +21,9 @@
 
       --titleSize: 33px;
       --numSize: 112px;
-      --unitSize: 26px;
+
+      /* ★ unitは numSize に連動： unitScaleで比率調整 */
+      --unitScale: 0.23;  /* 112px * 0.23 ≒ 26px 相当 */
       --statusSize: 28px;
 
       --dashW: 220px;
@@ -34,17 +36,20 @@
       --serverBadgeY: 118px;
       --serverLinesY: 132px;
       --serverLinesSize: 28px;
+      --serverLineGap: 8px;
 
       /* ===== 通信速度サブタイトル ===== */
       --netSubSize: 18px;
       --netSubGap: 6px;
 
+      /* ===== サーバータイトル2行 ===== */
+      --srvSubSize: 22px;
+      --srvSubGap: 6px;
+
       /* ===== 色/質感 ===== */
       --bg: #000;
       --gold: rgba(242,176,0,.95);
       --gold2: rgba(242,176,0,.55);
-      --textDim: rgba(242,176,0,.78);
-      --whiteDim: rgba(220,220,220,.78);
 
       --outerStroke: 10px;
       --innerStroke: 4px;
@@ -70,9 +75,7 @@
       justify-content:space-between;
       gap:12px;
     }
-    .brand{
-      line-height:1;
-    }
+    .brand{ line-height:1; }
     .brand .h1{
       font-family: "Noto Serif JP", serif;
       font-weight: 900;
@@ -117,8 +120,6 @@
         0 18px 45px rgba(0,0,0,.75);
       overflow:hidden;
     }
-
-    /* outer glow-ish frame */
     .card::before{
       content:"";
       position:absolute;
@@ -149,7 +150,7 @@
       pointer-events:none;
     }
 
-    /* ===== Common metric elements (absolute) ===== */
+    /* ===== Common metric elements ===== */
     .metric-title{
       position:absolute;
       left: 0;
@@ -179,14 +180,15 @@
       pointer-events:none;
     }
 
+    /* ★ unitは numSize に連動（unitScale） */
     .metric-unit{
       position:absolute;
       left: 50%;
       top: calc(190px + var(--numY) + var(--unitY));
-      transform: translateX(120px); /* 右側固定(数値サイズ想定) */
+      transform: translateX(120px); /* 右側固定（今は調整用） */
       font-family: "Orbitron", system-ui, sans-serif;
       font-weight: 700;
-      font-size: var(--unitSize);
+      font-size: calc(var(--numSize) * var(--unitScale));
       letter-spacing: .06em;
       color: rgba(220,220,220,.7);
       pointer-events:none;
@@ -218,9 +220,7 @@
     }
 
     /* ===== 通信速度：タイトル2行 ===== */
-    .card--net .metric-title{
-      line-height: 1.05;
-    }
+    .card--net .metric-title{ line-height: 1.05; }
     .card--net .metric-title .sub{
       display:block;
       margin-top: var(--netSubGap);
@@ -236,10 +236,23 @@
     .card--server .metric-unit{
       display:none;
     }
+
+    /* ★ サーバータイトル2行 */
     .card--server .metric-title{
-      top: calc(44px + var(--titleY));
-      font-size: calc(var(--titleSize) - 3px);
+      line-height: 1.05;
+      top: calc(40px + var(--titleY));
+      font-size: calc(var(--titleSize) - 2px);
     }
+    .card--server .metric-title .subjp{
+      display:block;
+      margin-top: var(--srvSubGap);
+      font-family:"Noto Serif JP", serif;
+      font-size: var(--srvSubSize);
+      font-weight: 900;
+      letter-spacing: .10em;
+      color: rgba(242,176,0,.78);
+    }
+
     .badge{
       position:absolute;
       right: 54px;
@@ -255,6 +268,8 @@
       background: rgba(0,0,0,.25);
       pointer-events:none;
     }
+
+    /* ★ サーバー名3行 */
     .server-lines{
       position:absolute;
       left: 0;
@@ -262,23 +277,20 @@
       top: calc(var(--serverLinesY) + var(--numY));
       text-align:center;
       font-family:"Orbitron", system-ui, sans-serif;
-      font-weight: 700;
-      font-size: var(--serverLinesSize);
-      letter-spacing: .18em;
-      color: rgba(220,220,220,.75);
-      pointer-events:none;
-    }
-    .server-lines .big{
-      display:block;
       font-weight: 900;
-      letter-spacing: .24em;
+      font-size: var(--serverLinesSize);
+      letter-spacing: .22em;
       color: rgba(220,220,220,.78);
-      margin-bottom: 10px;
+      pointer-events:none;
+      line-height: 1.0;
     }
-    .server-lines .small{
+    .server-lines span{
       display:block;
-      color: rgba(220,220,220,.72);
     }
+    .server-lines .l1{ margin-bottom: var(--serverLineGap); }
+    .server-lines .l2{ margin-bottom: var(--serverLineGap); letter-spacing: .26em; }
+    .server-lines .l3{ font-weight: 700; letter-spacing: .28em; color: rgba(220,220,220,.72); }
+
     .card--server .dash{
       top: calc(240px + var(--dashY));
       border-top-width: 6px;
@@ -296,7 +308,7 @@
       z-index: 999;
       display:flex;
       justify-content:center;
-      pointer-events:none; /* ボタン以外は透過 */
+      pointer-events:none;
     }
     .tunerBar{
       width: min(720px, 100%);
@@ -339,11 +351,11 @@
       bottom: 70px;
       z-index: 999;
       border-radius: 18px;
-      background: rgba(0,0,0,.25);        /* スケスケ */
+      background: rgba(0,0,0,.25); /* スケスケ */
       backdrop-filter: blur(12px);
       border: 1px solid rgba(255,255,255,.10);
       padding: 14px 14px 10px;
-      max-height: 44vh;                   /* iPhoneでスクロール可 */
+      max-height: 44vh;
       overflow:auto;
       -webkit-overflow-scrolling: touch;
       display:none;
@@ -380,7 +392,7 @@
       letter-spacing:.10em;
       color: rgba(242,176,0,.85);
       font-size: 12px;
-      min-width: 72px;
+      min-width: 86px;
       text-align:right;
     }
 
@@ -483,11 +495,12 @@
     <!-- サーバー稼働状況：DENPO -->
     <div class="card card--server">
       <div class="frame"></div>
-      <div class="metric-title">サーバー稼働状況</div>
+      <div class="metric-title">サーバー<span class="subjp">稼働状況</span></div>
       <div class="badge">稼働中</div>
       <div class="server-lines">
-        <span class="big">GOJA</span>
-        <span class="small">DENPO-SERVER</span>
+        <span class="l1">GOJA</span>
+        <span class="l2">DENPO</span>
+        <span class="l3">SERVER</span>
       </div>
       <div class="dash"></div>
       <div class="status">稼働状態：通常</div>
@@ -496,11 +509,12 @@
     <!-- サーバー稼働状況：CLOUD -->
     <div class="card card--server">
       <div class="frame"></div>
-      <div class="metric-title">サーバー稼働状況</div>
+      <div class="metric-title">サーバー<span class="subjp">稼働状況</span></div>
       <div class="badge">稼働中</div>
       <div class="server-lines">
-        <span class="big">GOJA</span>
-        <span class="small">CLOUD-SERVER</span>
+        <span class="l1">GOJA</span>
+        <span class="l2">CLOUD</span>
+        <span class="l3">SERVER</span>
       </div>
       <div class="dash"></div>
       <div class="status">稼働状態：通常</div>
@@ -563,13 +577,16 @@
       </div>
       <div class="val" id="v_numSize"></div>
     </div>
+
+    <!-- ★ unitScale：数字に対する単位の比率 -->
     <div class="row">
       <div>
-        <div class="name">単位サイズ</div>
-        <input type="range" id="unitSize" min="10" max="44" step="1">
+        <div class="name">単位サイズ比（数字に連動）</div>
+        <input type="range" id="unitScale" min="0.10" max="0.40" step="0.01">
       </div>
-      <div class="val" id="v_unitSize"></div>
+      <div class="val" id="v_unitScale"></div>
     </div>
+
     <div class="row">
       <div>
         <div class="name">稼働状態サイズ</div>
@@ -611,17 +628,24 @@
     </div>
     <div class="row">
       <div>
-        <div class="name">GOJA/DENPO行Y</div>
+        <div class="name">サーバー名(3行)Y</div>
         <input type="range" id="serverLinesY" min="60" max="240" step="1">
       </div>
       <div class="val" id="v_serverLinesY"></div>
     </div>
     <div class="row">
       <div>
-        <div class="name">GOJA/DENPO文字サイズ</div>
+        <div class="name">サーバー名 文字サイズ</div>
         <input type="range" id="serverLinesSize" min="14" max="40" step="1">
       </div>
       <div class="val" id="v_serverLinesSize"></div>
+    </div>
+    <div class="row">
+      <div>
+        <div class="name">サーバー名 行間</div>
+        <input type="range" id="serverLineGap" min="0" max="18" step="1">
+      </div>
+      <div class="val" id="v_serverLineGap"></div>
     </div>
 
     <h3>NET (2行目)</h3>
@@ -638,6 +662,22 @@
         <input type="range" id="netSubGap" min="0" max="14" step="1">
       </div>
       <div class="val" id="v_netSubGap"></div>
+    </div>
+
+    <h3>SERVER TITLE (2行目)</h3>
+    <div class="row">
+      <div>
+        <div class="name">「稼働状況」サイズ</div>
+        <input type="range" id="srvSubSize" min="12" max="36" step="1">
+      </div>
+      <div class="val" id="v_srvSubSize"></div>
+    </div>
+    <div class="row">
+      <div>
+        <div class="name">2行目の間隔</div>
+        <input type="range" id="srvSubGap" min="0" max="14" step="1">
+      </div>
+      <div class="val" id="v_srvSubGap"></div>
     </div>
 
     <div class="btns">
@@ -657,10 +697,13 @@
     // ===== defaults =====
     const defaults = {
       titleY: 19, numY: 4, unitY: 0, dashY: -2, statusY: -10,
-      titleSize: 33, numSize: 112, unitSize: 26, statusSize: 28,
+      titleSize: 33, numSize: 112,
+      unitScale: 0.23,      // ★ unitはnumに連動
+      statusSize: 28,
       dashW: 220, cardSize: 340, cardGap: 22,
-      serverBadgeY: 118, serverLinesY: 132, serverLinesSize: 28,
+      serverBadgeY: 118, serverLinesY: 132, serverLinesSize: 28, serverLineGap: 8,
       netSubSize: 18, netSubGap: 6,
+      srvSubSize: 22, srvSubGap: 6,
     };
 
     const root = document.documentElement;
@@ -669,35 +712,57 @@
       root.style.setProperty(`--${name}`, `${value}${unit}`);
     }
 
-    function getVarNum(name){
-      const v = getComputedStyle(root).getPropertyValue(`--${name}`).trim();
+    function getVarRaw(name){
+      return getComputedStyle(root).getPropertyValue(`--${name}`).trim();
+    }
+
+    function getVarNumPx(name){
+      const v = getVarRaw(name);
       return parseFloat(v.replace("px","")) || 0;
     }
 
-    function bindSlider(id, unit="px"){
+    function bindSliderPX(id){
       const el = document.getElementById(id);
       const v = document.getElementById("v_" + id);
 
-      // init
       el.value = defaults[id];
-      v.textContent = `${defaults[id]}${unit}`;
-
-      // apply
-      setVar(id, defaults[id], unit);
+      v.textContent = `${defaults[id]}px`;
+      setVar(id, defaults[id], "px");
 
       el.addEventListener("input", () => {
         const val = parseFloat(el.value);
-        v.textContent = `${val}${unit}`;
-        setVar(id, val, unit);
+        v.textContent = `${val}px`;
+        setVar(id, val, "px");
+      });
+    }
+
+    function bindSliderFloat(id, decimals=2){
+      const el = document.getElementById(id);
+      const v = document.getElementById("v_" + id);
+
+      el.value = defaults[id];
+      v.textContent = `${Number(defaults[id]).toFixed(decimals)}`;
+      root.style.setProperty(`--${id}`, String(defaults[id]));
+
+      el.addEventListener("input", () => {
+        const val = parseFloat(el.value);
+        v.textContent = `${val.toFixed(decimals)}`;
+        root.style.setProperty(`--${id}`, String(val));
       });
     }
 
     function resetAll(){
       for(const k in defaults){
         const el = document.getElementById(k);
-        if(el){
-          el.value = defaults[k];
-          const v = document.getElementById("v_" + k);
+        if(!el) continue;
+
+        el.value = defaults[k];
+
+        const v = document.getElementById("v_" + k);
+        if(k === "unitScale"){
+          if(v) v.textContent = Number(defaults[k]).toFixed(2);
+          root.style.setProperty(`--${k}`, String(defaults[k]));
+        }else{
           if(v) v.textContent = `${defaults[k]}px`;
           setVar(k, defaults[k], "px");
         }
@@ -710,27 +775,34 @@
       const lines = [];
       lines.push("GOJA TUNER 値（これを俺に送れ）");
       for(const k of keys){
-        const val = Math.round(getVarNum(k));
-        lines.push(`${k}=${val}`);
+        if(k === "unitScale"){
+          const raw = getVarRaw(k);
+          lines.push(`${k}=${Number(raw).toFixed(2)}`);
+        }else{
+          const val = Math.round(getVarNumPx(k));
+          lines.push(`${k}=${val}`);
+        }
       }
       const text = lines.join("\n");
 
       navigator.clipboard?.writeText(text).then(() => {
         alert("コピーした");
       }).catch(() => {
-        // iOS fallback
         prompt("コピーして送って", text);
       });
     }
 
-    // ===== bind all sliders =====
+    // ===== bind sliders =====
     [
       "titleY","numY","unitY","dashY","statusY",
-      "titleSize","numSize","unitSize","statusSize",
+      "titleSize","numSize","statusSize",
       "dashW","cardSize","cardGap",
-      "serverBadgeY","serverLinesY","serverLinesSize",
-      "netSubSize","netSubGap"
-    ].forEach(id => bindSlider(id));
+      "serverBadgeY","serverLinesY","serverLinesSize","serverLineGap",
+      "netSubSize","netSubGap",
+      "srvSubSize","srvSubGap"
+    ].forEach(bindSliderPX);
+
+    bindSliderFloat("unitScale", 2);
 
     // ===== panel toggle =====
     const panel = document.getElementById("panel");
@@ -753,9 +825,6 @@
     }
     tick();
     setInterval(tick, 1000);
-
-    // ===== demo values (あとでAPIに差し替え可能) =====
-    // ここは「見た目確認」用。必要なら消してOK。
   </script>
 </body>
 </html>
