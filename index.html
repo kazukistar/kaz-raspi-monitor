@@ -1,266 +1,251 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>GOJA UI TUNER (Square)</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>GOJA UI Position Tuner</title>
 
-  <!-- Fonts: 数字=デジタル/日本語=明朝寄り -->
+  <!-- Fonts（数字=デジタル寄り / 日本語=明朝寄り） -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Noto+Serif+JP:wght@700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Noto+Serif+JP:wght@600;700&display=swap" rel="stylesheet">
 
   <style>
     :root{
-      /* ===== Theme ===== */
-      --bg: #000000;
-      --gold: #f2b400;            /* エヴァ寄りの黄 */
-      --gold-dim: rgba(242,180,0,.55);
+      --bg:#000;
+      --card:#0b0b0b;
+      --gold:#f4b000;
+      --gold2:#c98900;
 
-      /* ===== Card sizing ===== */
-      --cardW: min(94vw, 560px);
-      --cardRadius: 28px;
-
-      /* ===== Inner frame sizing ===== */
-      --frameInsetOuter: 18px;
-      --frameInsetInner: 38px;
-      --frameStrokeOuter: 6px;
-      --frameStrokeInner: 4px;
-
-      /* ===== Tunable (defaults) ===== */
+      /* 初期値（スライダーで更新） */
       --titleY: 0px;
       --numY: 0px;
       --dashY: 0px;
       --statusY: 0px;
 
-      --titleSize: 26px;
-      --numSize: 96px;
-      --unitSize: 20px;
-      --statusSize: 22px;
+      --titleSize: 22px;
+      --numSize: 92px;
+      --statusSize: 20px;
 
-      --dashW: 62%;   /* 点線の長さ（カード幅に対する割合） */
-      --dashThick: 4px;
-      --dashGap: 10px;
+      --dashW: 220px;
     }
 
-    html, body {
-      height: 100%;
-      margin: 0;
-      background: var(--bg);
-      color: #fff;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
+    *{ box-sizing:border-box; }
+    html,body{
+      height:100%;
+      background:var(--bg);
+      color:#fff;
+      margin:0;
+      -webkit-text-size-adjust: 100%;
+      font-feature-settings: "palt" 1;
     }
 
-    body{
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      padding: 18px 14px calc(18px + env(safe-area-inset-bottom));
-      gap: 14px;
-      overflow-x: hidden;
+    .wrap{
+      min-height: 100%;
+      padding: 24px 16px 120px;
+      display:flex;
+      align-items:flex-start;
+      justify-content:center;
     }
 
-    /* ===== "あなたに伝える" 指示テキスト（見やすい位置） ===== */
-    .note{
-      width: var(--cardW);
-      max-width: var(--cardW);
-      color: rgba(255,255,255,.78);
-      font-size: 12.5px;
-      line-height: 1.35;
-      letter-spacing: .02em;
-      text-align: left;
-      padding: 10px 12px;
-      border-radius: 14px;
-      background: rgba(255,255,255,.06);
-      border: 1px solid rgba(255,255,255,.08);
-    }
-    .note b{ color: #fff; }
-
-    /* ===== Card container ===== */
-    .card-wrap{
-      width: var(--cardW);
-      border-radius: var(--cardRadius);
-      background: rgba(255,255,255,.06);
-      padding: 16px;
-      box-shadow:
-        0 18px 50px rgba(0,0,0,.65),
-        inset 0 0 0 1px rgba(255,255,255,.04);
-    }
-
-    /* ===== Square card (歪まない) ===== */
+    /* ===== カード（正方形固定で“縦長”防止） ===== */
     .card{
-      width: 100%;
-      aspect-ratio: 1 / 1; /* ←ここが“縦長”を殺す */
-      border-radius: calc(var(--cardRadius) - 6px);
-      background: #000;
+      width: min(92vw, 560px);
+      aspect-ratio: 1 / 1;
+      background: var(--bg);
+      border-radius: 22px;
       position: relative;
       overflow: hidden;
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.06), 0 20px 60px rgba(0,0,0,0.55);
     }
 
-    /* Outer frame */
+    /* “背景は真っ黒” */
     .card::before{
       content:"";
+      position:absolute; inset:0;
+      background:#000;
+    }
+
+    /* 六角形SVG */
+    .hex{
       position:absolute;
-      inset: var(--frameInsetOuter);
-      border-radius: 22px;
-      border: var(--frameStrokeOuter) solid var(--gold);
-      box-shadow: 0 0 0 1px rgba(0,0,0,.35);
+      inset: 0;
+      display:block;
+      width:100%;
+      height:100%;
+      pointer-events:none;
+      filter: drop-shadow(0 0 12px rgba(244,176,0,0.18));
+    }
+
+    /* テキストレイヤ */
+    .layer{
+      position:absolute;
+      inset:0;
+      display:block;
       pointer-events:none;
     }
 
-    /* Inner frame */
-    .card::after{
-      content:"";
-      position:absolute;
-      inset: var(--frameInsetInner);
-      border-radius: 18px;
-      border: var(--frameStrokeInner) solid rgba(242,180,0,.55);
-      pointer-events:none;
-    }
-
-    /* ===== Content ===== */
     .title{
       position:absolute;
-      top: calc(18% + var(--titleY));
-      left: 50%;
-      transform: translateX(-50%);
-      font-family: "Noto Serif JP", serif;
-      font-weight: 900;
+      left:50%;
+      top: 20%;
+      transform: translate(-50%,-50%) translateY(var(--titleY));
+      font-family: "Noto Serif JP","Yu Mincho","Hiragino Mincho ProN",serif;
+      font-weight: 700;
       font-size: var(--titleSize);
-      letter-spacing: .08em;
+      letter-spacing: 0.08em;
       color: var(--gold);
-      text-shadow: 0 2px 10px rgba(242,180,0,.15);
+      text-shadow: 0 0 10px rgba(244,176,0,0.12);
       white-space: nowrap;
-      user-select:none;
     }
 
-    .value{
+    .numRow{
       position:absolute;
-      top: calc(40% + var(--numY));
-      left: 50%;
-      transform: translateX(-50%);
+      left:50%;
+      top: 44%;
+      transform: translate(-50%,-50%) translateY(var(--numY));
       display:flex;
       align-items: baseline;
       gap: 10px;
-      user-select:none;
-    }
-    .num{
-      font-family: "Orbitron", system-ui, sans-serif;
-      font-weight: 900;
-      font-size: var(--numSize);
-      letter-spacing: .02em;
       color: var(--gold);
-      line-height: 1;
-      text-shadow: 0 3px 16px rgba(242,180,0,.12);
+      text-shadow: 0 0 14px rgba(244,176,0,0.12);
+      white-space: nowrap;
     }
-    .unit{
-      font-family: "Orbitron", system-ui, sans-serif;
+
+    .num{
+      font-family: "Orbitron", ui-monospace, SFMono-Regular, Menlo, monospace;
       font-weight: 700;
-      font-size: var(--unitSize);
-      color: rgba(255,255,255,.62);
-      letter-spacing: .05em;
-      transform: translateY(-4px);
+      font-size: var(--numSize);
+      line-height: 1;
+      letter-spacing: 0.02em;
+    }
+
+    .unit{
+      font-family: "Orbitron", ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-weight: 600;
+      font-size: calc(var(--numSize) * 0.28);
+      opacity: 0.85;
     }
 
     .dash{
       position:absolute;
-      top: calc(63% + var(--dashY));
-      left: 50%;
-      transform: translateX(-50%);
+      left:50%;
+      top: 64%;
+      transform: translate(-50%,-50%) translateY(var(--dashY));
       width: var(--dashW);
       height: 0;
-      border-top: var(--dashThick) dashed rgba(242,180,0,.35);
-      /* dashの見た目を少し整える */
-      filter: drop-shadow(0 1px 0 rgba(0,0,0,.35));
-      user-select:none;
+      border-top: 3px dashed rgba(244,176,0,0.55);
+      filter: drop-shadow(0 0 6px rgba(244,176,0,0.10));
     }
 
     .status{
       position:absolute;
-      top: calc(71% + var(--statusY));
-      left: 50%;
-      transform: translateX(-50%);
-      font-family: "Noto Serif JP", serif;
-      font-weight: 900;
+      left:50%;
+      top: 76%;
+      transform: translate(-50%,-50%) translateY(var(--statusY));
+      font-family: "Noto Serif JP","Yu Mincho","Hiragino Mincho ProN",serif;
+      font-weight: 700;
       font-size: var(--statusSize);
-      letter-spacing: .10em;
-      color: rgba(242,180,0,.82);
+      letter-spacing: 0.06em;
+      color: rgba(244,176,0,0.92);
       white-space: nowrap;
-      user-select:none;
+      text-shadow: 0 0 10px rgba(244,176,0,0.10);
     }
 
-    /* ===== Bottom control bar (透明・小さめ) ===== */
+    /* ===== コントロール（透ける・固定・スクロール可） ===== */
     .panel{
-      width: var(--cardW);
+      position: fixed;
+      left: 12px;
+      right: 12px;
+      bottom: calc(12px + env(safe-area-inset-bottom));
       border-radius: 18px;
-      background: rgba(0,0,0,.25);     /* スケスケ */
-      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,0.28);          /* スケスケ */
+      border: 1px solid rgba(255,255,255,0.12);
+      box-shadow: 0 16px 40px rgba(0,0,0,0.55);
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
       overflow: hidden;
+      max-width: 760px;
+      margin: 0 auto;
     }
 
-    .panel-head{
+    .panelHeader{
       display:flex;
       align-items:center;
-      justify-content: space-between;
-      padding: 12px 12px;
+      justify-content:space-between;
       gap: 10px;
+      padding: 10px 12px;
     }
 
-    .panel-title{
-      font-size: 12.5px;
-      letter-spacing: .04em;
-      color: rgba(255,255,255,.80);
-      user-select:none;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+    .panelTitle{
+      font-family: system-ui, -apple-system, "SF Pro Display", sans-serif;
+      font-weight: 650;
+      font-size: 14px;
+      color: rgba(255,255,255,0.92);
+      letter-spacing: 0.02em;
+    }
+
+    .panelHint{
+      font-family: system-ui, -apple-system, "SF Pro Display", sans-serif;
+      font-size: 12px;
+      color: rgba(255,255,255,0.75);
+      margin-top: 2px;
     }
 
     .btn{
       appearance:none;
-      border: 1px solid rgba(255,255,255,.16);
-      background: rgba(255,255,255,.08);
-      color: rgba(255,255,255,.88);
+      border: 1px solid rgba(255,255,255,0.18);
+      background: rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.92);
       padding: 8px 12px;
       border-radius: 14px;
-      font-size: 12.5px;
-      letter-spacing: .08em;
-      cursor: pointer;
-      user-select:none;
+      font-weight: 650;
+      font-size: 12px;
+      letter-spacing: 0.02em;
     }
     .btn:active{ transform: translateY(1px); }
 
-    .panel-body{
-      padding: 8px 12px 12px;
+    .panelBody{
+      padding: 10px 12px 12px;
       display: none;
+      max-height: 42vh;          /* ここがスクロール領域 */
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;       /* パネル内は縦スクロールOK */
     }
-    .panel.open .panel-body{ display:block; }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
 
     .row{
-      display:grid;
-      grid-template-columns: 1fr auto;
-      align-items:center;
+      padding: 10px 10px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .labelLine{
+      display:flex;
+      align-items:baseline;
+      justify-content:space-between;
       gap: 10px;
-      padding: 8px 0;
+      margin-bottom: 8px;
     }
+
     .label{
-      font-size: 12px;
-      color: rgba(255,255,255,.78);
-      letter-spacing: .04em;
-      user-select:none;
+      font-family: system-ui, -apple-system, "SF Pro Display", sans-serif;
+      font-size: 13px;
+      font-weight: 650;
+      color: rgba(255,255,255,0.92);
     }
+
     .val{
-      font-family: "Orbitron", system-ui, sans-serif;
-      font-size: 11px;
-      color: rgba(255,255,255,.66);
-      letter-spacing: .06em;
-      user-select:none;
-      min-width: 66px;
-      text-align: right;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 12px;
+      color: rgba(255,255,255,0.75);
     }
 
     input[type="range"]{
@@ -268,6 +253,11 @@
       accent-color: var(--gold);
       height: 28px;
       background: transparent;
+
+      /* ★iOS/LINEで縦スクロールに吸われない */
+      touch-action: pan-x; /* 横ドラッグだけ許可 */
+      -webkit-user-select: none;
+      user-select: none;
     }
 
     .actions{
@@ -275,121 +265,158 @@
       gap: 10px;
       margin-top: 10px;
     }
-    .btn-wide{
+    .actions .btn{
       flex:1;
-      padding: 10px 12px;
+      padding: 12px 12px;
       border-radius: 16px;
-      font-weight: 700;
+      font-size: 13px;
     }
 
-    /* ===== Tiny toast ===== */
     .toast{
       position: fixed;
-      bottom: calc(14px + env(safe-area-inset-bottom));
       left: 50%;
+      bottom: calc(90px + env(safe-area-inset-bottom));
       transform: translateX(-50%);
-      padding: 10px 12px;
-      border-radius: 14px;
-      background: rgba(0,0,0,.55);
-      border: 1px solid rgba(255,255,255,.12);
-      color: rgba(255,255,255,.9);
-      font-size: 12px;
-      letter-spacing: .06em;
+      padding: 10px 14px;
+      background: rgba(0,0,0,0.65);
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 999px;
+      color: rgba(255,255,255,0.92);
+      font-family: system-ui, -apple-system, "SF Pro Display", sans-serif;
+      font-weight: 650;
+      font-size: 13px;
+      display:none;
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
-      display:none;
-      z-index: 9999;
+      max-width: 92vw;
+      text-align:center;
     }
-    .toast.show{ display:block; }
-
-    /* iOS: selection */
-    *{ -webkit-tap-highlight-color: transparent; }
   </style>
 </head>
 
 <body>
-
-  <div class="note">
-    <b>使い方：</b>下の <b>SHOW</b> → スライダーで位置/サイズ/点線長さを合わせる → <b>COPY</b> を押して値を送ってくれ。<br>
-    （※背景は真っ黒固定。カードは正方形＝歪まない。）
-  </div>
-
-  <div class="card-wrap">
+  <div class="wrap">
     <div class="card" id="card">
-      <div class="title" id="title">メモリ稼働率</div>
+      <!-- 正六角形（外枠+内枠） -->
+      <svg class="hex" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+        <!-- 外枠：正六角形（フラットトップ） -->
+        <polygon
+          points="25,6.7 75,6.7 96.6,50 75,93.3 25,93.3 3.4,50"
+          fill="none"
+          stroke="rgba(244,176,0,0.98)"
+          stroke-width="5"
+          stroke-linejoin="round"
+        />
+        <!-- 内枠 -->
+        <polygon
+          points="29,14 71,14 89,50 71,86 29,86 11,50"
+          fill="none"
+          stroke="rgba(244,176,0,0.48)"
+          stroke-width="3"
+          stroke-linejoin="round"
+        />
+      </svg>
 
-      <div class="value" id="value">
-        <div class="num" id="num">60</div>
-        <div class="unit" id="unit">%</div>
+      <div class="layer">
+        <div class="title" id="titleText">メモリ稼働率</div>
+
+        <div class="numRow" id="numRow">
+          <div class="num" id="numText">60</div>
+          <div class="unit" id="unitText">%</div>
+        </div>
+
+        <div class="dash" id="dashLine"></div>
+
+        <div class="status" id="statusText">稼働状態：通常</div>
       </div>
-
-      <div class="dash" id="dash"></div>
-
-      <div class="status" id="status">稼働状態：通常</div>
     </div>
   </div>
 
+  <!-- 透けパネル -->
   <div class="panel" id="panel">
-    <div class="panel-head">
-      <div class="panel-title">位置調整（縦）＋文字サイズ＋点線長さ</div>
+    <div class="panelHeader">
+      <div>
+        <div class="panelTitle">位置調整（縦）＋文字サイズ＋点線長さ</div>
+        <div class="panelHint">スライダーで決めたら COPY → そのまま俺に送れ。</div>
+      </div>
       <button class="btn" id="toggleBtn">SHOW</button>
     </div>
 
-    <div class="panel-body">
+    <div class="panelBody" id="panelBody">
+      <div class="grid">
 
-      <!-- ===== Y offsets ===== -->
-      <div class="row">
-        <div class="label">題目 Y（px）</div><div class="val" id="vTitleY">0</div>
+        <!-- Y調整 -->
+        <div class="row">
+          <div class="labelLine">
+            <div class="label">題目 Y</div>
+            <div class="val" id="vTitleY">0px</div>
+          </div>
+          <input type="range" id="sTitleY" min="-160" max="160" step="1" value="0">
+        </div>
+
+        <div class="row">
+          <div class="labelLine">
+            <div class="label">数字 Y</div>
+            <div class="val" id="vNumY">0px</div>
+          </div>
+          <input type="range" id="sNumY" min="-160" max="160" step="1" value="0">
+        </div>
+
+        <div class="row">
+          <div class="labelLine">
+            <div class="label">点線 Y</div>
+            <div class="val" id="vDashY">0px</div>
+          </div>
+          <input type="range" id="sDashY" min="-160" max="160" step="1" value="0">
+        </div>
+
+        <div class="row">
+          <div class="labelLine">
+            <div class="label">稼働状態 Y</div>
+            <div class="val" id="vStatusY">0px</div>
+          </div>
+          <input type="range" id="sStatusY" min="-160" max="160" step="1" value="0">
+        </div>
+
+        <!-- 文字サイズ -->
+        <div class="row">
+          <div class="labelLine">
+            <div class="label">題目 サイズ</div>
+            <div class="val" id="vTitleSize">22px</div>
+          </div>
+          <input type="range" id="sTitleSize" min="12" max="40" step="1" value="22">
+        </div>
+
+        <div class="row">
+          <div class="labelLine">
+            <div class="label">数字 サイズ</div>
+            <div class="val" id="vNumSize">92px</div>
+          </div>
+          <input type="range" id="sNumSize" min="40" max="150" step="1" value="92">
+        </div>
+
+        <div class="row">
+          <div class="labelLine">
+            <div class="label">稼働状態 サイズ</div>
+            <div class="val" id="vStatusSize">20px</div>
+          </div>
+          <input type="range" id="sStatusSize" min="10" max="34" step="1" value="20">
+        </div>
+
+        <!-- 点線長さ -->
+        <div class="row">
+          <div class="labelLine">
+            <div class="label">点線 長さ</div>
+            <div class="val" id="vDashW">220px</div>
+          </div>
+          <input type="range" id="sDashW" min="80" max="420" step="1" value="220">
+        </div>
+
+        <div class="actions">
+          <button class="btn" id="copyBtn">COPY</button>
+          <button class="btn" id="resetBtn">RESET</button>
+        </div>
       </div>
-      <input id="sTitleY" type="range" min="-120" max="120" value="0" />
-
-      <div class="row">
-        <div class="label">数字 Y（px）</div><div class="val" id="vNumY">0</div>
-      </div>
-      <input id="sNumY" type="range" min="-140" max="140" value="0" />
-
-      <div class="row">
-        <div class="label">点線 Y（px）</div><div class="val" id="vDashY">0</div>
-      </div>
-      <input id="sDashY" type="range" min="-140" max="140" value="0" />
-
-      <div class="row">
-        <div class="label">稼働状態 Y（px）</div><div class="val" id="vStatusY">0</div>
-      </div>
-      <input id="sStatusY" type="range" min="-140" max="140" value="0" />
-
-      <!-- ===== Font sizes ===== -->
-      <div class="row">
-        <div class="label">題目 サイズ（px）</div><div class="val" id="vTitleSize">26</div>
-      </div>
-      <input id="sTitleSize" type="range" min="14" max="44" value="26" />
-
-      <div class="row">
-        <div class="label">数字 サイズ（px）</div><div class="val" id="vNumSize">96</div>
-      </div>
-      <input id="sNumSize" type="range" min="54" max="140" value="96" />
-
-      <div class="row">
-        <div class="label">単位 サイズ（px）</div><div class="val" id="vUnitSize">20</div>
-      </div>
-      <input id="sUnitSize" type="range" min="12" max="34" value="20" />
-
-      <div class="row">
-        <div class="label">稼働状態 サイズ（px）</div><div class="val" id="vStatusSize">22</div>
-      </div>
-      <input id="sStatusSize" type="range" min="12" max="36" value="22" />
-
-      <!-- ===== Dash length ===== -->
-      <div class="row">
-        <div class="label">点線 長さ（%）</div><div class="val" id="vDashW">62%</div>
-      </div>
-      <input id="sDashW" type="range" min="30" max="92" value="62" />
-
-      <div class="actions">
-        <button class="btn btn-wide" id="copyBtn">COPY</button>
-        <button class="btn btn-wide" id="resetBtn">RESET</button>
-      </div>
-
     </div>
   </div>
 
@@ -398,117 +425,209 @@
   <script>
     const root = document.documentElement;
 
-    const panel = document.getElementById("panel");
-    const toggleBtn = document.getElementById("toggleBtn");
+    const el = {
+      toggleBtn: document.getElementById("toggleBtn"),
+      panelBody: document.getElementById("panelBody"),
+      toast: document.getElementById("toast"),
+      copyBtn: document.getElementById("copyBtn"),
+      resetBtn: document.getElementById("resetBtn"),
 
-    toggleBtn.addEventListener("click", () => {
-      const open = panel.classList.toggle("open");
-      toggleBtn.textContent = open ? "HIDE" : "SHOW";
-    });
+      sTitleY: document.getElementById("sTitleY"),
+      sNumY: document.getElementById("sNumY"),
+      sDashY: document.getElementById("sDashY"),
+      sStatusY: document.getElementById("sStatusY"),
 
-    const DEFAULTS = {
-      titleY: 0, numY: 0, dashY: 0, statusY: 0,
-      titleSize: 26, numSize: 96, unitSize: 20, statusSize: 22,
-      dashW: 62
+      sTitleSize: document.getElementById("sTitleSize"),
+      sNumSize: document.getElementById("sNumSize"),
+      sStatusSize: document.getElementById("sStatusSize"),
+
+      sDashW: document.getElementById("sDashW"),
+
+      vTitleY: document.getElementById("vTitleY"),
+      vNumY: document.getElementById("vNumY"),
+      vDashY: document.getElementById("vDashY"),
+      vStatusY: document.getElementById("vStatusY"),
+
+      vTitleSize: document.getElementById("vTitleSize"),
+      vNumSize: document.getElementById("vNumSize"),
+      vStatusSize: document.getElementById("vStatusSize"),
+
+      vDashW: document.getElementById("vDashW"),
     };
 
-    const binds = [
-      {slider:"sTitleY",   out:"vTitleY",   css:"--titleY",   unit:"px"},
-      {slider:"sNumY",     out:"vNumY",     css:"--numY",     unit:"px"},
-      {slider:"sDashY",    out:"vDashY",    css:"--dashY",    unit:"px"},
-      {slider:"sStatusY",  out:"vStatusY",  css:"--statusY",  unit:"px"},
+    const KEY = "goja_tuner_v1";
 
-      {slider:"sTitleSize",  out:"vTitleSize",  css:"--titleSize",  unit:"px"},
-      {slider:"sNumSize",    out:"vNumSize",    css:"--numSize",    unit:"px"},
-      {slider:"sUnitSize",   out:"vUnitSize",   css:"--unitSize",   unit:"px"},
-      {slider:"sStatusSize", out:"vStatusSize", css:"--statusSize", unit:"px"},
-
-      {slider:"sDashW",    out:"vDashW",    css:"--dashW",    unit:"%"},
-    ];
-
-    function setVar(varName, value, unit){
-      root.style.setProperty(varName, `${value}${unit}`);
-    }
-
-    function init(){
-      // set defaults
-      for(const b of binds){
-        const s = document.getElementById(b.slider);
-        const o = document.getElementById(b.out);
-        const key = b.css.replace("--","");
-
-        const dv = DEFAULTS[key];
-        s.value = dv;
-        if(b.unit === "%"){
-          o.textContent = `${dv}%`;
-          setVar(b.css, dv, "%");
-        }else{
-          o.textContent = `${dv}`;
-          setVar(b.css, dv, "px");
-        }
-
-        s.addEventListener("input", () => {
-          const v = Number(s.value);
-          if(b.unit === "%"){
-            o.textContent = `${v}%`;
-            setVar(b.css, v, "%");
-          }else{
-            o.textContent = `${v}`;
-            setVar(b.css, v, "px");
-          }
-        });
-      }
-    }
-
-    const toast = document.getElementById("toast");
     function showToast(msg){
-      toast.textContent = msg;
-      toast.classList.add("show");
+      el.toast.textContent = msg;
+      el.toast.style.display = "block";
       clearTimeout(showToast._t);
-      showToast._t = setTimeout(()=>toast.classList.remove("show"), 900);
+      showToast._t = setTimeout(()=>{ el.toast.style.display="none"; }, 1200);
     }
 
-    document.getElementById("copyBtn").addEventListener("click", async () => {
-      const get = (id) => Number(document.getElementById(id).value);
+    function setVar(name, value){
+      root.style.setProperty(name, value);
+    }
 
-      const payload = {
-        titleY: get("sTitleY"),
-        numY: get("sNumY"),
-        dashY: get("sDashY"),
-        statusY: get("sStatusY"),
-        titleSize: get("sTitleSize"),
-        numSize: get("sNumSize"),
-        unitSize: get("sUnitSize"),
-        statusSize: get("sStatusSize"),
-        dashW: get("sDashW")
+    function applyFromSliders(){
+      const titleY = Number(el.sTitleY.value);
+      const numY = Number(el.sNumY.value);
+      const dashY = Number(el.sDashY.value);
+      const statusY = Number(el.sStatusY.value);
+
+      const titleSize = Number(el.sTitleSize.value);
+      const numSize = Number(el.sNumSize.value);
+      const statusSize = Number(el.sStatusSize.value);
+
+      const dashW = Number(el.sDashW.value);
+
+      setVar("--titleY", titleY + "px");
+      setVar("--numY", numY + "px");
+      setVar("--dashY", dashY + "px");
+      setVar("--statusY", statusY + "px");
+
+      setVar("--titleSize", titleSize + "px");
+      setVar("--numSize", numSize + "px");
+      setVar("--statusSize", statusSize + "px");
+
+      setVar("--dashW", dashW + "px");
+
+      el.vTitleY.textContent = titleY + "px";
+      el.vNumY.textContent = numY + "px";
+      el.vDashY.textContent = dashY + "px";
+      el.vStatusY.textContent = statusY + "px";
+
+      el.vTitleSize.textContent = titleSize + "px";
+      el.vNumSize.textContent = numSize + "px";
+      el.vStatusSize.textContent = statusSize + "px";
+
+      el.vDashW.textContent = dashW + "px";
+
+      save();
+    }
+
+    function save(){
+      const data = {
+        titleY: el.sTitleY.value,
+        numY: el.sNumY.value,
+        dashY: el.sDashY.value,
+        statusY: el.sStatusY.value,
+        titleSize: el.sTitleSize.value,
+        numSize: el.sNumSize.value,
+        statusSize: el.sStatusSize.value,
+        dashW: el.sDashW.value
+      };
+      localStorage.setItem(KEY, JSON.stringify(data));
+    }
+
+    function load(){
+      try{
+        const raw = localStorage.getItem(KEY);
+        if(!raw) return;
+        const d = JSON.parse(raw);
+
+        if(d.titleY != null) el.sTitleY.value = d.titleY;
+        if(d.numY != null) el.sNumY.value = d.numY;
+        if(d.dashY != null) el.sDashY.value = d.dashY;
+        if(d.statusY != null) el.sStatusY.value = d.statusY;
+
+        if(d.titleSize != null) el.sTitleSize.value = d.titleSize;
+        if(d.numSize != null) el.sNumSize.value = d.numSize;
+        if(d.statusSize != null) el.sStatusSize.value = d.statusSize;
+
+        if(d.dashW != null) el.sDashW.value = d.dashW;
+      }catch(e){}
+    }
+
+    function resetAll(){
+      el.sTitleY.value = 0;
+      el.sNumY.value = 0;
+      el.sDashY.value = 0;
+      el.sStatusY.value = 0;
+
+      el.sTitleSize.value = 22;
+      el.sNumSize.value = 92;
+      el.sStatusSize.value = 20;
+
+      el.sDashW.value = 220;
+
+      applyFromSliders();
+      showToast("リセットした");
+    }
+
+    async function copyConfig(){
+      const cfg = {
+        titleY: Number(el.sTitleY.value),
+        numY: Number(el.sNumY.value),
+        dashY: Number(el.sDashY.value),
+        statusY: Number(el.sStatusY.value),
+        titleSize: Number(el.sTitleSize.value),
+        numSize: Number(el.sNumSize.value),
+        statusSize: Number(el.sStatusSize.value),
+        dashW: Number(el.sDashW.value),
       };
 
+      const text =
+`GOJA TUNER 値（これを俺に送れ）
+titleY=${cfg.titleY}
+numY=${cfg.numY}
+dashY=${cfg.dashY}
+statusY=${cfg.statusY}
+titleSize=${cfg.titleSize}
+numSize=${cfg.numSize}
+statusSize=${cfg.statusSize}
+dashW=${cfg.dashW}`;
+
       try{
-        await navigator.clipboard.writeText(JSON.stringify(payload, null, 2));
-        showToast("コピーした（JSON）");
+        await navigator.clipboard.writeText(text);
+        showToast("コピーした");
       }catch(e){
         // fallback
-        const ta = document.createElement("textarea");
-        ta.value = JSON.stringify(payload, null, 2);
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand("copy");
-        ta.remove();
-        showToast("コピーした（fallback）");
+        prompt("これをコピーして送れ", text);
       }
+    }
+
+    // show/hide
+    function setPanel(open){
+      el.panelBody.style.display = open ? "block" : "none";
+      el.toggleBtn.textContent = open ? "HIDE" : "SHOW";
+    }
+
+    // events
+    [
+      el.sTitleY, el.sNumY, el.sDashY, el.sStatusY,
+      el.sTitleSize, el.sNumSize, el.sStatusSize,
+      el.sDashW
+    ].forEach(r => {
+      r.addEventListener("input", applyFromSliders);
+      r.addEventListener("change", applyFromSliders);
     });
 
-    document.getElementById("resetBtn").addEventListener("click", () => {
-      for(const b of binds){
-        const s = document.getElementById(b.slider);
-        const key = b.css.replace("--","");
-        s.value = DEFAULTS[key];
-        s.dispatchEvent(new Event("input"));
-      }
-      showToast("リセットした");
+    el.toggleBtn.addEventListener("click", ()=>{
+      const open = el.panelBody.style.display !== "block";
+      setPanel(open);
     });
 
-    init();
+    el.copyBtn.addEventListener("click", copyConfig);
+    el.resetBtn.addEventListener("click", resetAll);
+
+    // ★iOS/LINE: スライダー操作中は縦スクロールに吸われない（重要）
+    document.querySelectorAll('input[type="range"]').forEach((r) => {
+      const stop = (e) => { e.stopPropagation(); };
+
+      r.addEventListener("touchstart", stop, { passive: true });
+
+      // ドラッグ中のページスクロールを殺す（passive:false必須）
+      r.addEventListener("touchmove", (e) => {
+        e.preventDefault();
+      }, { passive: false });
+
+      r.addEventListener("touchend", stop, { passive: true });
+    });
+
+    // init
+    load();
+    applyFromSliders();
+    setPanel(false);
   </script>
 </body>
 </html>
