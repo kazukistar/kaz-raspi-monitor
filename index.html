@@ -52,11 +52,11 @@
       box-sizing: border-box;
     }
 
-    /* “横幅はスマホいっぱい” を優先。六角形をでかく見せる */
+    /* ====== ここだけ修正：正六角形の比率 (W:H = 2:√3 = 1.154700...) ====== */
     .hexStage{
       position: relative;
       width: 100%;
-      aspect-ratio: 1 / 0.86;        /* 横長気味に見せつつ、正六角形はSVG内で担保 */
+      aspect-ratio: 1.1547005 / 1; /* ← 正六角形が潰れない */
       max-height: 360px;
       display:flex;
       align-items:center;
@@ -95,7 +95,7 @@
       font-size: clamp(18px, 4.2vw, 26px);
       color: var(--text);
       text-shadow: 0 0 18px rgba(242,177,0,.12);
-      margin-bottom: 10px; /* 見た目のベース。縦位置はスライダーで */
+      margin-bottom: 10px;
     }
 
     /* 数字：デジタル寄せ */
@@ -114,7 +114,7 @@
         "DS-Digital","Digital-7","Orbitron","Share Tech Mono",
         ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
       font-weight: 700;
-      font-size: clamp(72px, 16vw, 120px); /* ← “数字もっと大きく” */
+      font-size: clamp(72px, 16vw, 120px);
       line-height: 1;
     }
 
@@ -128,16 +128,16 @@
       transform: translateY(6px);
     }
 
-    /* 点線：短めに（スライダーで縦だけ動く） */
+    /* 点線：短めに */
     .metric-dash{
       transform: translateY(var(--y-dash));
-      width: 62%;                 /* ← “点線はもう少し短くていい” */
+      width: 62%;
       border-bottom: 3px dashed rgba(242,177,0,.45);
       margin-top: 16px;
       margin-bottom: 14px;
     }
 
-    /* 稼働状態：もう少し上＆文字大きめ（スライダーで縦だけ） */
+    /* 稼働状態 */
     .metric-status{
       transform: translateY(var(--y-status));
       font-family:
@@ -145,12 +145,12 @@
         "Times New Roman",serif;
       font-weight: 800;
       letter-spacing: .08em;
-      font-size: clamp(14px, 3.6vw, 20px); /* ← “もう少し文字大きく” */
+      font-size: clamp(14px, 3.6vw, 20px);
       color: var(--muted);
       margin-top: 4px;
     }
 
-    /* ===== tuner UI (あなたが位置を決める用) ===== */
+    /* ===== tuner UI ===== */
     #tuner{
       position: fixed;
       left: 10px; right: 10px; bottom: 10px;
@@ -193,7 +193,6 @@
     }
     .tunerBtns button{ flex:1; }
 
-    /* iPhoneの下安全領域 */
     @supports(padding: max(0px)){
       #tuner{ bottom: max(10px, env(safe-area-inset-bottom)); }
       body{ padding-bottom: calc(140px + env(safe-area-inset-bottom)); }
@@ -205,15 +204,36 @@
   <div class="wrap">
     <div class="card">
       <div class="hexStage">
-        <!-- 正六角形：viewBox内の座標が“正”なので崩れない -->
-        <svg class="hex" viewBox="0 0 100 86" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-          <!-- 正六角形（横幅いっぱいで見せるためにこのviewBox比） -->
-          <!-- points: (50,2) (93,23) (93,63) (50,84) (7,63) (7,23) -->
-          <polygon class="hexOuter" points="50,2 93,23 93,63 50,84 7,63 7,23"></polygon>
-          <polygon class="hexInner" points="50,9 86,27 86,59 50,77 14,59 14,27"></polygon>
+        <!-- ====== ここだけ修正：数学的に正しい「正六角形」 ======
+             viewBoxは幅200、高さは 100*√3 = 173.205...
+             これで「潰れない正六角形」になる
+        -->
+        <svg class="hex" viewBox="0 0 200 173.205" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+          <!-- 外枠（R=100, center=(100,86.6025)） -->
+          <polygon class="hexOuter"
+            points="
+              200,86.602
+              150,173.205
+              50,173.205
+              0,86.602
+              50,0
+              150,0
+            ">
+          </polygon>
+
+          <!-- 内枠（R=82, 同中心） -->
+          <polygon class="hexInner"
+            points="
+              182,86.602
+              141,157.660
+              59,157.660
+              18,86.602
+              59,15.545
+              141,15.545
+            ">
+          </polygon>
         </svg>
 
-        <!-- 文字・点線（縦だけスライダーで動かす） -->
         <div class="overlay">
           <div class="metric-title">メモリ稼働率</div>
 
@@ -230,7 +250,6 @@
     </div>
   </div>
 
-  <!-- ===== TUNER UI ===== -->
   <div id="tuner">
     <div class="tunerHead">
       <div>位置調整（縦だけ）</div>
@@ -277,7 +296,6 @@
       status:$("vStatus"),
     };
 
-    // load
     const saved = JSON.parse(localStorage.getItem("goja_pos") || "{}");
     keys.forEach(k => {
       const v = (saved[k] ?? 0);
@@ -286,7 +304,6 @@
       document.documentElement.style.setProperty(`--y-${k}`, `${v}px`);
     });
 
-    // bind
     keys.forEach(k => {
       sliders[k].addEventListener("input", () => {
         const v = parseInt(sliders[k].value, 10) || 0;
@@ -299,7 +316,6 @@
       });
     });
 
-    // hide/show
     $("tunerToggle").addEventListener("click", () => {
       const t = $("tuner");
       if (t.classList.contains("hidden")) {
@@ -311,7 +327,6 @@
       }
     });
 
-    // copy
     $("copyPos").addEventListener("click", async () => {
       const cur = JSON.parse(localStorage.getItem("goja_pos") || "{}");
       const text = JSON.stringify({
@@ -330,7 +345,6 @@
       }
     });
 
-    // reset
     $("resetPos").addEventListener("click", () => {
       localStorage.removeItem("goja_pos");
       keys.forEach(k => {
