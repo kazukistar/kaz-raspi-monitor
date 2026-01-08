@@ -13,44 +13,44 @@
   <style>
     :root{
       /* ===== GOJA TUNER (共通) ===== */
-      --titleY: 19px;
-      --numY: 4px;
+      --titleY: 15px;
+      --numY: -10px;
 
-      --unitY: 0px;
-      --unitX: 120px;   /* ★ 単位の横位置（右すぎ調整） */
+      --unitY: 24px;
+      --unitX: 88px;
 
-      --dashY: -2px;
-      --statusY: -10px;
+      --dashY: 7px;
+      --statusY: -2px;
 
-      --titleSize: 33px;
-      --numSize: 112px;
+      --titleSize: 38px;
+      --numSize: 97px;
 
-      /* ★ unitは numSize に連動： unitScaleで比率調整 */
-      --unitScale: 0.23;  /* 112px * 0.23 ≒ 26px 相当 */
-      --statusSize: 28px;
+      /* unitは numSize に連動 */
+      --unitScale: 0.15;
+      --statusSize: 33px;
 
       --dashW: 220px;
 
-      /* ★ 通信速度だけ題目Yを独立 */
+      /* 通信速度だけ題目Yを独立 */
       --netTitleY: 0px;
 
       /* ===== 追加TUNER ===== */
-      --cardSize: 340px;      /* 正方形 */
-      --cardGap: 22px;
+      --cardSize: 380px;      /* 正方形 */
+      --cardGap: 40px;
 
       /* ===== サーバーカード専用 ===== */
-      --serverBadgeY: 118px;
-      --serverLinesY: 132px;
-      --serverLinesSize: 28px;
-      --serverLineGap: 8px;
+      --serverBadgeY: 220px;
+      --serverLinesY: 151px;
+      --serverLinesSize: 26px;
+      --serverLineGap: 3px;
 
       /* ===== 通信速度サブタイトル ===== */
-      --netSubSize: 18px;
-      --netSubGap: 6px;
+      --netSubSize: 21px;
+      --netSubGap: 7px;
 
       /* ===== サーバータイトル2行 ===== */
-      --srvSubSize: 22px;
-      --srvSubGap: 6px;
+      --srvSubSize: 30px;
+      --srvSubGap: 2px;
 
       /* ===== 色/質感 ===== */
       --bg: #000;
@@ -186,12 +186,12 @@
       pointer-events:none;
     }
 
-    /* ★ unitは numSize に連動（unitScale） */
+    /* unitは numSize に連動（unitScale） */
     .metric-unit{
       position:absolute;
       left: 50%;
       top: calc(190px + var(--numY) + var(--unitY));
-      transform: translateX(var(--unitX)); /* ★ 右側距離を可変 */
+      transform: translateX(var(--unitX));
       font-family: "Orbitron", system-ui, sans-serif;
       font-weight: 700;
       font-size: calc(var(--numSize) * var(--unitScale));
@@ -228,7 +228,7 @@
     /* ===== 通信速度：タイトル2行 ===== */
     .card--net .metric-title{
       line-height: 1.05;
-      top: calc(46px + var(--titleY) + var(--netTitleY)); /* ★ 通信だけ題目Y */
+      top: calc(46px + var(--titleY) + var(--netTitleY));
     }
     .card--net .metric-title .sub{
       display:block;
@@ -246,7 +246,7 @@
       display:none;
     }
 
-    /* ★ サーバータイトル2行 */
+    /* サーバータイトル2行 */
     .card--server .metric-title{
       line-height: 1.05;
       top: calc(40px + var(--titleY));
@@ -262,23 +262,10 @@
       color: rgba(242,176,0,.78);
     }
 
-    .badge{
-      position:absolute;
-      right: 54px;
-      top: var(--serverBadgeY);
-      padding: 10px 22px;
-      border-radius: 999px;
-      border: 3px solid rgba(242,176,0,.45);
-      color: rgba(242,176,0,.92);
-      font-family:"Noto Serif JP", serif;
-      font-weight: 900;
-      font-size: 24px;
-      letter-spacing: .08em;
-      background: rgba(0,0,0,.25);
-      pointer-events:none;
-    }
+    /* ★ 稼働中バッジは削除（UIを変えずに非表示） */
+    .badge{ display:none; }
 
-    /* ★ サーバー名3行 */
+    /* サーバー名3行 */
     .server-lines{
       position:absolute;
       left: 0;
@@ -358,7 +345,7 @@
       bottom: 70px;
       z-index: 999;
       border-radius: 18px;
-      background: rgba(0,0,0,.25); /* スケスケ */
+      background: rgba(0,0,0,.25);
       backdrop-filter: blur(12px);
       border: 1px solid rgba(255,255,255,.10);
       padding: 14px 14px 10px;
@@ -503,7 +490,6 @@
     <div class="card card--server">
       <div class="frame"></div>
       <div class="metric-title">サーバー<span class="subjp">稼働状況</span></div>
-      <div class="badge">稼働中</div>
       <div class="server-lines">
         <span class="l1">GOJA</span>
         <span class="l2">DENPO</span>
@@ -517,7 +503,6 @@
     <div class="card card--server">
       <div class="frame"></div>
       <div class="metric-title">サーバー<span class="subjp">稼働状況</span></div>
-      <div class="badge">稼働中</div>
       <div class="server-lines">
         <span class="l1">GOJA</span>
         <span class="l2">CLOUD</span>
@@ -554,8 +539,6 @@
       </div>
       <div class="val" id="v_unitY"></div>
     </div>
-
-    <!-- ★ 追加：単位X -->
     <div class="row">
       <div>
         <div class="name">単位X（右すぎ調整）</div>
@@ -563,7 +546,6 @@
       </div>
       <div class="val" id="v_unitX"></div>
     </div>
-
     <div class="row">
       <div>
         <div class="name">点線Y</div>
@@ -578,8 +560,6 @@
       </div>
       <div class="val" id="v_statusY"></div>
     </div>
-
-    <!-- ★ 追加：通信速度だけ題目Y -->
     <div class="row">
       <div>
         <div class="name">通信速度 題目Y（通信だけ）</div>
@@ -603,8 +583,6 @@
       </div>
       <div class="val" id="v_numSize"></div>
     </div>
-
-    <!-- ★ unitScale：数字に対する単位の比率 -->
     <div class="row">
       <div>
         <div class="name">単位サイズ比（数字に連動）</div>
@@ -612,7 +590,6 @@
       </div>
       <div class="val" id="v_unitScale"></div>
     </div>
-
     <div class="row">
       <div>
         <div class="name">稼働状態サイズ</div>
@@ -632,26 +609,19 @@
     <div class="row">
       <div>
         <div class="name">カードサイズ（正方形）</div>
-        <input type="range" id="cardSize" min="260" max="380" step="1">
+        <input type="range" id="cardSize" min="260" max="420" step="1">
       </div>
       <div class="val" id="v_cardSize"></div>
     </div>
     <div class="row">
       <div>
         <div class="name">カード間隔</div>
-        <input type="range" id="cardGap" min="10" max="40" step="1">
+        <input type="range" id="cardGap" min="10" max="60" step="1">
       </div>
       <div class="val" id="v_cardGap"></div>
     </div>
 
-    <h3>SERVER (被り対策)</h3>
-    <div class="row">
-      <div>
-        <div class="name">稼働中バッジY</div>
-        <input type="range" id="serverBadgeY" min="60" max="220" step="1">
-      </div>
-      <div class="val" id="v_serverBadgeY"></div>
-    </div>
+    <h3>SERVER (調整)</h3>
     <div class="row">
       <div>
         <div class="name">サーバー名(3行)Y</div>
@@ -722,25 +692,39 @@
   <script>
     // ===== defaults =====
     const defaults = {
-      titleY: 19, numY: 4,
+      titleY: 15,
+      numY: -10,
 
-      unitY: 0,
-      unitX: 120,        // ★ 追加
+      unitY: 24,
+      unitX: 88,
 
-      dashY: -2, statusY: -10,
+      dashY: 7,
+      statusY: -2,
 
-      titleSize: 33, numSize: 112,
+      titleSize: 38,
+      numSize: 97,
 
-      unitScale: 0.23,   // ★ unitはnumに連動
-      statusSize: 28,
+      unitScale: 0.15,
+      statusSize: 33,
 
       dashW: 220,
-      netTitleY: 0,      // ★ 追加
+      netTitleY: 0,
 
-      cardSize: 340, cardGap: 22,
-      serverBadgeY: 118, serverLinesY: 132, serverLinesSize: 28, serverLineGap: 8,
-      netSubSize: 18, netSubGap: 6,
-      srvSubSize: 22, srvSubGap: 6,
+      cardSize: 380,
+      cardGap: 40,
+
+      /* badgeは削除したが、変数としては残してOK（使ってない） */
+      serverBadgeY: 220,
+
+      serverLinesY: 151,
+      serverLinesSize: 26,
+      serverLineGap: 3,
+
+      netSubSize: 21,
+      netSubGap: 7,
+
+      srvSubSize: 30,
+      srvSubGap: 2,
     };
 
     const root = document.documentElement;
@@ -834,7 +818,7 @@
       "titleY","numY","unitY","unitX","dashY","statusY","netTitleY",
       "titleSize","numSize","statusSize",
       "dashW","cardSize","cardGap",
-      "serverBadgeY","serverLinesY","serverLinesSize","serverLineGap",
+      "serverLinesY","serverLinesSize","serverLineGap",
       "netSubSize","netSubGap",
       "srvSubSize","srvSubGap"
     ].forEach(bindSliderPX);
